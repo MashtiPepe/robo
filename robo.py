@@ -2,6 +2,7 @@ import serial
 import time
 import threading
 import keyboard
+import os
 
 rIdle             = 'idle'
 rClearFeedback    = 'clear feedback'
@@ -21,8 +22,11 @@ robo_angle = 0
 robo_states = [rIdle, rClearFeedback, rWaitCF, rForward, rWaitForward, rFaceBackward, rWaitFaceBackward, rGoBack, rWaitGoBack, rFaceForward, rWaitFaceForward]
 
 try:
-  #ser = serial.Serial(port="/dev/ttyUSB0", baudrate=38400, timeout=0, rtscts=0, xonxoff=0)
-  ser = serial.Serial(port="COM37", baudrate=115200, timeout=0, rtscts=0, xonxoff=0)
+  print(os.name)
+  if os.name == 'posix':
+    ser = serial.Serial(port="/dev/ttyUSB0", baudrate=115200, timeout=0, rtscts=0, xonxoff=0)
+  else:
+    ser = serial.Serial(port="COM37", baudrate=115200, timeout=0, rtscts=0, xonxoff=0)
   time.sleep(0.5)
   ser_port = True
   print('serial port open okay')
