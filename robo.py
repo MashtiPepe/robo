@@ -22,6 +22,7 @@ robo_angle = 0
 robo_states = [rIdle, rClearFeedback, rWaitCF, rForward, rWaitForward, rFaceBackward, rWaitFaceBackward, rGoBack, rWaitGoBack, rFaceForward, rWaitFaceForward]
 
 key = ''
+check_key_time = 0
 
 try:
   print(os.name)
@@ -56,6 +57,7 @@ def robo_read():
         key = 's'
       elif data[0] & 4 > 0:
         key = 'p'
+        print ('******************  STOP')
       elif data[0] & 64 > 0:
         robo_state = rClearFeedback
       
@@ -179,6 +181,14 @@ def robo_full_control():
   robo_send([132])
   
 def robo_sensors(packet):
+  global check_key_time
+  
+  if packet == 18:
+    check_key_time = time.time() + 1
+  elif time.time() > check_key_time:
+    check_key_time = time.time() + 1
+    packet = 18
+  
   #print('sensors')
   robo_send([142, packet]);
   
@@ -209,7 +219,8 @@ if ser_port:
       time.sleep(1)
       
       #get any key presses
-      robo_sensors(18)
+      if robo_state ==  rIdle:
+        robo_sensors(18)
       
       if keyboard.is_pressed('b') or key == 'b':     #begin the program
         robo_run()
