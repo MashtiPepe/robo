@@ -21,6 +21,8 @@ robo_travel = 0
 robo_angle = 0
 robo_states = [rIdle, rClearFeedback, rWaitCF, rForward, rWaitForward, rFaceBackward, rWaitFaceBackward, rGoBack, rWaitGoBack, rFaceForward, rWaitFaceForward]
 
+key = ''
+
 try:
   print(os.name)
   if os.name == 'posix':
@@ -38,6 +40,7 @@ except:
 def robo_read():
   global thread_run
   global robo_state, robo_travel, robo_angle
+  global key
   
   while thread_run:
     time.sleep(0.1)
@@ -45,6 +48,16 @@ def robo_read():
     if len(data) > 0:
       #print(len(data), data.decode('iso-8859-1'))
       print(len(data), data)
+      
+    if len(data) == 1:
+      if data[0] & 1 > 0:
+        key = 'b'
+      elif data[0] & 2 > 0:
+        key = 's'
+      elif data[0] & 4 > 0:
+        key = 'p'
+      elif data[0] & 64 > 0:
+        robo_state = rClearFeedback
       
     if robo_state == rWaitCF:
       if len(data) == 6:
@@ -166,7 +179,7 @@ def robo_full_control():
   robo_send([132])
   
 def robo_sensors(packet):
-  print('sensors')
+  #print('sensors')
   robo_send([142, packet]);
   
 def robo_run():
@@ -174,6 +187,7 @@ def robo_run():
   
   print('begin run')
   if robo_state == rIdle:
+    robo_sing()
     robo_state = rForward
 
 
@@ -192,21 +206,29 @@ if ser_port:
 
   try:
     while True:
-      time.sleep(0.5)
-      if keyboard.is_pressed('b'):     #begin the program
+      time.sleep(1)
+      
+      #get any key presses
+      robo_sensors(18)
+      
+      if keyboard.is_pressed('b') or key == 'b':     #begin the program
         robo_run()
+        key = ''
       elif keyboard.is_pressed('r'):   #reset
         robo_reset()
-      elif keyboard.is_pressed('s'):   #beep
+      elif keyboard.is_pressed('s') or key == 's':   #beep
         robo_sing()
+        key = ''
       elif keyboard.is_pressed('t'):   #turn clockwise
         robo_drive(50, -1)
       elif keyboard.is_pressed('g'):   #straight
         robo_drive(20, 32767)
-      elif keyboard.is_pressed('p'):   #stop
-        robo_drive(0, -1)
+      elif keyboard.is_pressed('p') or key == 'p':   #stop
+        robo_state = rIdle
+        robo_drive(0, -1)        
+        key = ''
       elif keyboard.is_pressed('i'):   #feedback
-        robo_sensors()
+        robo_sensors(18)
       elif keyboard.is_pressed('c'):
         if robo_state == rIdle:
           robo_state = rClearFeedback
