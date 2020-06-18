@@ -60,6 +60,11 @@ def robo_read():
         print ('******************  STOP')
       elif data[0] & 64 > 0:
         robo_state = rClearFeedback
+        
+    if len(data) == 29:
+      robo_left_enc = int.from_bytes(data[1:3], byteorder='big', signed=True)
+      robo_right_enc = int.from_bytes(data[3:5], byteorder='big', signed=True)
+      print(robo_left_enc, robo_right_enc)
       
     if robo_state == rWaitCF:
       if len(data) == 6:
@@ -239,7 +244,7 @@ if ser_port:
         robo_drive(0, -1)        
         key = ''
       elif keyboard.is_pressed('i'):   #feedback
-        robo_sensors(18)
+        robo_sensors(101)
       elif keyboard.is_pressed('c'):
         if robo_state == rIdle:
           robo_state = rClearFeedback
