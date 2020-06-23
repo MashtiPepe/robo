@@ -48,7 +48,7 @@ data_rcv = False
 #
 rw = 36
 CPR = 503
-D = 232
+D = 217
 R = D/2
 pi_rw = math.pi * rw
 pi_rw_div_CPR = pi_rw / CPR
