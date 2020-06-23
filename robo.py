@@ -135,7 +135,7 @@ def robo_calc_pos(P1, P2):
   
 
 def rdata_button_press(data):
-  global ket, robo_state
+  global key, robo_state
   
   if data & 1 > 0:    #clean button
     key = 'b'
