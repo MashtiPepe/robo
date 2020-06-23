@@ -47,7 +47,7 @@ data_rcv = False
 # theta (orientation range 0 to 2 pi) = (p2 - p2) / (D / 2)
 #
 rw = 36
-CPR = 508.8
+CPR = 503
 D = 232
 R = D/2
 pi_rw = math.pi * rw
@@ -265,7 +265,7 @@ def robo_read():
       robo_drive(50, 32767)
       
     if robo_state == rWaitForward:
-      if robo_travel >= 500:
+      if robo_vector_xy[0] >= 1552.57:
         robo_drive(0, 0)
         robo_state = rFaceBackward
         
@@ -283,7 +283,7 @@ def robo_read():
       robo_drive(50, 32767)
     
     if robo_state == rWaitGoBack:
-      if robo_travel >= 1000:
+      if robo_vector_xy[0] <= 0:
         robo_drive(0, 0)
         robo_state = rFaceForward
         
