@@ -32,7 +32,6 @@ last_left_enc = 0
 last_right_enc = 0
 P1 = 0
 P2 = 0
-radian_in_pos = math.pi / 50
 
 key = ''
 data_request_time = 0
@@ -49,11 +48,13 @@ data_rcv = False
 #
 rw = 36
 CPR = 503
-D = 247   #217 inside dim, 232 center dim, 247 outside dim
+D = 252   #217 inside dim, 232 center dim, 247 outside dim
 R = D/2
 pi_rw = math.pi * rw
 pi_rw_div_CPR = pi_rw / CPR
 two_pi = math.pi * 2
+radian_in_pos = two_pi / 100
+
 
 # travel in mm
 def polar_r(P1, P2):
