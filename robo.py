@@ -267,7 +267,7 @@ def robo_read():
       robo_drive(50, 1)
       
     if robo_state == rWaitFaceBackward:
-      if ABS(robo_orientation - math.pi) <= 0.017:
+      if abs(robo_orientation - math.pi) <= 0.017:
         robo_drive(0, 0)
         robo_state = rGoBack
       
@@ -285,7 +285,7 @@ def robo_read():
       robo_drive(50, -1)
       
     if robo_state == rWaitFaceForward:
-      if ABS(robo_orientation - 0) <= 1 or ABS(robo_orientation - 360) <= 1:
+      if abs(robo_orientation - 0) <= 1 or abs(robo_orientation - 360) <= 1:
         robo_drive(0, 0)
         robo_state = rIdle
       
