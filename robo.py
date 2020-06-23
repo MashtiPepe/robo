@@ -167,24 +167,17 @@ def rdata_enc_feedback(data):
     print('INITIALIZE', robo_left_enc, robo_right_enc, robo_vector_xy[0], robo_vector_xy[1])
     robo_state = rIdle
     
-  #check for roll over
-  if last_left_enc > 10000 and robo_left_enc < -10000:
-    p1_add = 65535  #+(32767 - last_left_enc) + (32768 + robo_left_enc)    #65535 - last_left_enc + robo_left_enc
-  elif last_left_enc < -10000 and robo_left_enc > 10000:
-    p1_add = -65535  #-(32768 + last_left_enc) - (32767 - robo_left_enc)   #-65535 - last_left_enc + robo_left_enc
-  else:
-    p1_add = 0
     
-  #check for roll over
-  if last_right_enc > 10000 and robo_right_enc < -10000:
-    p2_add = 65535   #(32767 - last_right_enc) + (32768 + robo_right_enc)    #65535 - last_right_enc + robo_right_enc
-  elif last_right_enc < -10000 and robo_right_enc > 10000:
-    p2_add = -65535   #-(32768 + last_right_enc) - (32767 - robo_right_enc)   #-65535 - last_right_enc + robo_right_enc
-  else:
-    p2_add = 0
-    
-  P1 += (robo_left_enc - last_left_enc + p1_add)
-  P2 += (robo_right_enc - last_right_enc + p2_add)
+  P1 += (robo_left_enc - last_left_enc)
+  if P1 > 32767:
+    P1 -= 65535
+  elif P1 < -32768:
+    P1 += 65535
+  P2 += (robo_right_enc - last_right_enc)
+  if P2 > 32767:
+    P2 -= 65535
+  elif P2 < -32768:
+    P2 += 65535
   
   last_left_enc = robo_left_enc
   last_right_enc = robo_right_enc
