@@ -32,6 +32,7 @@ last_left_enc = 0
 last_right_enc = 0
 P1 = 0
 P2 = 0
+radian_in_pos = math.pi / 50
 
 key = ''
 data_request_time = 0
@@ -267,7 +268,7 @@ def robo_read():
       robo_drive(50, 1)
       
     if robo_state == rWaitFaceBackward:
-      if abs(robo_orientation - math.pi) <= 0.017:
+      if abs(robo_orientation - math.pi) <= radian_in_pos:
         robo_drive(0, 0)
         robo_state = rGoBack
       
@@ -285,7 +286,7 @@ def robo_read():
       robo_drive(50, -1)
       
     if robo_state == rWaitFaceForward:
-      if abs(robo_orientation - 0) <= 1 or abs(robo_orientation - 360) <= 1:
+      if abs(robo_orientation - 0) <= radian_in_pos or abs(robo_orientation - two_pi) <= radian_in_pos:
         robo_drive(0, 0)
         robo_state = rIdle
       
