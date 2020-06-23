@@ -48,7 +48,7 @@ data_rcv = False
 #
 rw = 36
 CPR = 503
-D = 217
+D = 247   #217 inside dim, 232 center dim, 247 outside dim
 R = D/2
 pi_rw = math.pi * rw
 pi_rw_div_CPR = pi_rw / CPR
@@ -169,17 +169,17 @@ def rdata_enc_feedback(data):
     
   #check for roll over
   if last_left_enc > 10000 and robo_left_enc < -10000:
-    p1_add = (32767 - last_left_enc) + (32768 + robo_left_enc)    #65535 - last_left_enc + robo_left_enc
+    p1_add = 65535  #+(32767 - last_left_enc) + (32768 + robo_left_enc)    #65535 - last_left_enc + robo_left_enc
   elif last_left_enc < -10000 and robo_left_enc > 10000:
-    p1_add = -(32768 + last_left_enc) - (32767 - robo_left_enc)   #-65535 - last_left_enc + robo_left_enc
+    p1_add = -65535  #-(32768 + last_left_enc) - (32767 - robo_left_enc)   #-65535 - last_left_enc + robo_left_enc
   else:
     p1_add = 0
     
   #check for roll over
   if last_right_enc > 10000 and robo_right_enc < -10000:
-    p2_add = (32767 - last_right_enc) + (32768 + robo_right_enc)    #65535 - last_right_enc + robo_right_enc
+    p2_add = 65535   #(32767 - last_right_enc) + (32768 + robo_right_enc)    #65535 - last_right_enc + robo_right_enc
   elif last_right_enc < -10000 and robo_right_enc > 10000:
-    p2_add = -(32768 + last_right_enc) - (32767 - robo_right_enc)   #-65535 - last_right_enc + robo_right_enc
+    p2_add = -65535   #-(32768 + last_right_enc) - (32767 - robo_right_enc)   #-65535 - last_right_enc + robo_right_enc
   else:
     p2_add = 0
     
