@@ -19,7 +19,6 @@ rWaitGoBack       = 'wait go back'
 rFaceForward      = 'face forward'
 rWaitFaceForward  = 'wait face forward'
 rCloseLoop        = 'close loop'
-rCloseLoopSpin    = 'close loop spin'
 
 robo_state = 'idle'
 #these two are calculated by the firmware
@@ -46,9 +45,15 @@ pwm_R = 0
 pwm_L = 0
 pwm_norm = 70
 pwm_max = 90
-pwm_accel = 2
+pwm_accel = 3
 pwm_update_time = 0
 pwm_last_error = 0
+
+cModeStraight = 'straight'
+cModeSpin     = 'spin'
+R_L_Offset = 0
+R_Target = 0
+C_Mode = cModeStraight
 
 #
 # robot wheel radius rw = 36 mm
@@ -322,21 +327,21 @@ def robo_read():
         robo_state = rIdle
         
     if robo_state == rCloseLoop:
-      if PRight >= (CPR*10):
+      if PRight >= R_Target:
         print('out of close loop')
         robo_pwm(0, 0)
         #robo_drive(0, 0)
         robo_state = rIdle
       else:
-        if PRight >= (CPR * 9.2):
+        if abs(PRight - R_Target) < 500:
           pwm_norm = 25
         else:
-          pwm_norm = pwm_max * 0.8
+          pwm_norm = pwm_max * 0.9
           
         if pwm_R < pwm_norm:
-          pwm_R = min(pwm_norm, max(20, pwm_R + pwm_accel))
+          pwm_R = max(35, pwm_R + pwm_accel)
         elif pwm_R > pwm_norm:
-          pwm_R = min(pwm_norm, max(20, pwm_R - pwm_accel))
+          pwm_R = max(35, pwm_R - pwm_accel)
           
         if time.time() > pwm_update_time:
           error = (error_function(PLeft, PRight) * 1.8) - pwm_last_error
@@ -405,13 +410,15 @@ def robo_run():
     robo_state = rForward
     
 def error_function(PLeft, PRight):
-  #return PRight - PLeft
-  return -(PRight + PLeft)
+  if C_Mode == cModeStraight:
+    return PRight - PLeft - R_L_Offset
+  else:
+    return -(PRight + PLeft) + R_L_Offset
     
 def robo_pwm(R, L):
   R = round(R)
   L = round(L)
-  print('pwm', R, L, PLeft, PRight, error_function(PLeft, PRight))
+  print(f'pwm {R} {L} {PLeft} {PRight} {error_function(PLeft, PRight)} theta: {radians_to_deg(robo_orientation):.1f}')
   robo_send([146] + robo_num(R) + robo_num(L))
 
 
@@ -423,6 +430,8 @@ def _keypress(event):
 def robo_process():
   global robo_state
   global thread_run, init_feedback, key, keysdown, check_something_wrong
+  global C_Mode, R_L_Offset, R_Target, pwm_R, pwm_L
+
   
   try:
     while thread_run:
@@ -459,7 +468,19 @@ def robo_process():
         robo_drive(0, -1)        
         key = ''
         keysdown = {}
-      elif 'w' in keysdown:   #pwm
+      elif 'w' in keysdown:   #pwm straight
+        robo_state = rIdle
+        if C_Mode == cModeStraight:
+          C_Mode = cModeSpin
+          R_Target = PRight + (CPR * 1.555)
+          R_L_Offset = PRight + PLeft
+        else:
+          C_Mode = cModeStraight
+          R_Target = PRight + (CPR * 15)
+          R_L_Offset = PRight - PLeft
+        
+        pwm_R = 0
+        pwm_L = 0
         robo_state = rCloseLoop
         keysdown = {}
       elif 'i' in keysdown:   #show PLeft and PRight
@@ -470,6 +491,7 @@ def robo_process():
         robo_state = rClearFeedback
       elif 'q' in keysdown:   #quit
         thread_run = False
+        ser.flush()
         keysdown = {}
         time.sleep(0.9)
         _root_window.destroy()
