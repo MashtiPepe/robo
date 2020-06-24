@@ -91,7 +91,7 @@ def polar_theta(PLeft, PRight):
   
   while theta > two_pi:
     theta -= two_pi
-  while theta < -two_pi:
+  while theta < 0:
     theta += two_pi
   
   #print(PRight - PLeft)  
@@ -470,7 +470,7 @@ def robo_process():
         keysdown = {}
       elif 'w' in keysdown:   #pwm straight
         robo_state = rIdle
-        if C_Mode == cModeStraight:
+        if True or C_Mode == cModeStraight:
           C_Mode = cModeSpin
           R_Target = PRight + (CPR * 1.555)
           R_L_Offset = PRight + PLeft
