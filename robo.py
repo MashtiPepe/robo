@@ -53,6 +53,7 @@ cModeStraight = 'straight'
 cModeSpin     = 'spin'
 R_L_Offset = 0
 R_Target = 0
+L_Target = 0
 C_Mode = cModeStraight
 
 #
@@ -249,7 +250,7 @@ def rdata_travel_angle(data):
     #print(f'travel: {robo_travel:.1f} x: {robo_vector_xy[0]:.1f}    angle: {robo_angle:.1f} theta: {radians_to_deg(robo_orientation):.1f}  y: {robo_vector_xy[1]:.1f}  PLeft: {PLeft}  PRight: {PRight}')
     print(PLeft, PRight)
   elif (robo_state != rCloseLoop):
-    print(PLeft, PRight)
+    print(PLeft, PRight, PRight - PLeft)
 
 
 
@@ -435,7 +436,7 @@ def _keypress(event):
 def robo_process():
   global robo_state
   global thread_run, init_feedback, key, keysdown, check_something_wrong
-  global C_Mode, R_L_Offset, R_Target, pwm_R, pwm_L
+  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L
 
   
   try:
@@ -475,14 +476,17 @@ def robo_process():
         keysdown = {}
       elif 'w' in keysdown:   #pwm straight
         robo_state = rIdle
-        if True or C_Mode == cModeStraight:
+        if C_Mode == cModeStraight:
           C_Mode = cModeSpin
-          R_Target = PRight + (CPR * 1.555)
-          R_L_Offset = PRight + PLeft
+          R_L_Offset = R_Target + L_Target
+          R_Target = R_Target + 815  #(CPR * 1.555)
+          L_Target -= 815
         else:
           C_Mode = cModeStraight
-          R_Target = PRight + (CPR * 15)
-          R_L_Offset = PRight - PLeft
+          R_L_Offset = R_Target - L_Target
+          R_Target += (CPR * 10)
+          L_Target += (CPR * 10)
+          #R_L_Offset = PRight - PLeft
         
         pwm_R = 0
         pwm_L = 0
