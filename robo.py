@@ -97,6 +97,11 @@ def polar_theta(PLeft, PRight):
   #print(PRight - PLeft)  
   robo_orientation += theta  
     
+  while robo_orientation > two_pi:
+    robo_orientation -= two_pi
+  while robo_orientation < 0:
+    robo_orientation += two_pi
+  
   return theta
   
 def radians_to_deg(theta):
