@@ -28,12 +28,12 @@ robo_angle = 0
 robo_vector_pol = [0, 0]
 robo_vector_xy = [0, 0]
 robo_orientation = 0
-last_P1 = 0
-last_P2 = 0
+last_PLeft = 0
+last_PRight = 0
 last_left_enc = 0
 last_right_enc = 0
-P1 = 0
-P2 = 0
+PLeft = 0
+PRight = 0
 
 key = ''
 data_request_time = 0
@@ -52,9 +52,9 @@ pwm_last_error = 0
 # counts per revolution of wheel is CPR = 508.8 (from documentation)
 # robot wheel separation is D = 232 mm (radius R = 116 mm)
 # 
-# polar coordinates travel: P1 is left wheel counts and P2 is right wheel counts.
-# r (travel distance mm) = (P1 + P2) / 2   * (2 pi rw) / CPR
-# theta (orientation range 0 to 2 pi) = (p2 - p2) / (D / 2)
+# polar coordinates travel: PLeft is left wheel counts and PRight is right wheel counts.
+# r (travel distance mm) = (PLeft + PRight) / 2   * (2 pi rw) / CPR
+# theta (orientation range 0 to 2 pi) = (PRight - PRight) / (D / 2)
 #
 rw = 36
 CPR = 508.5
@@ -67,18 +67,18 @@ radian_in_pos = two_pi / 100
 
 
 # travel in mm
-def polar_r(P1, P2):
-  # (P1 + P2) / 2 * (2 * pi * rw) / CPR
-  # (P1 + P2) * pi * rw / CPR
-  return (P1 + P2) * pi_rw_div_CPR
+def polar_r(PLeft, PRight):
+  # (PLeft + PRight) / 2 * (2 * pi * rw) / CPR
+  # (PLeft + PRight) * pi * rw / CPR
+  return (PLeft + PRight) * pi_rw_div_CPR
   
 #range is 0 to 2pi
 #orientation in radians                
-def polar_theta(P1, P2):
+def polar_theta(PLeft, PRight):
   global robo_orientation
   
-  # (P2 - P1) / R
-  theta = (P2 - P1) / R / 4
+  # (PRight - PLeft) / R
+  theta = (PRight - PLeft) / R / 4
     
   
   while theta > two_pi:
@@ -86,7 +86,7 @@ def polar_theta(P1, P2):
   while theta < -two_pi:
     theta += two_pi
   
-  #print(P2 - P1)  
+  #print(PRight - PLeft)  
   robo_orientation += theta  
     
   return theta
@@ -116,19 +116,19 @@ def robo_add_tuple(t1, t2):
   y = t1[1] + t2[1]
   return (x, y)
   
-def robo_calc_pos(P1, P2):
+def robo_calc_pos(PLeft, PRight):
   global robo_vector_xy, robo_vector_pol
-  global last_P1, last_P2
+  global last_PLeft, last_PRight
   
-  #print('Calc Pos', P1, P2)
+  #print('Calc Pos', PLeft, PRight)
   
   #update the new position in xy and polar coordinates
   #based on encoder feedback
   #movement since last time
-  rho = polar_r((P1 - last_P1), (P2 - last_P2))
-  phi = polar_theta((P1 - last_P1), (P2 - last_P2))
+  rho = polar_r((PLeft - last_PLeft), (PRight - last_PRight))
+  phi = polar_theta((PLeft - last_PLeft), (PRight - last_PRight))
   
-  #print(rho, phi, P1, P2, last_P1, last_P2)
+  #print(rho, phi, PLeft, PRight, last_PLeft, last_PRight)
   
   (x, y) = polar_to_xy((rho, robo_orientation))
   
@@ -142,8 +142,8 @@ def robo_calc_pos(P1, P2):
   #keep a position in polar coordinates
   robo_vector_pol = xy_to_polar(robo_vector_xy)
   
-  last_P1 = P1
-  last_P2 = P2
+  last_PLeft = PLeft
+  last_PRight = PRight
   
 
 def rdata_button_press(data):
@@ -160,8 +160,8 @@ def rdata_button_press(data):
     robo_state = rClearFeedback
 
 def rdata_enc_feedback(data):
-  global robo_state, last_left_enc, last_right_enc, P1, P2, robo_vector_xy, robo_vector_pol
-  global last_P1, last_P2
+  global robo_state, last_left_enc, last_right_enc, PLeft, PRight, robo_vector_xy, robo_vector_pol
+  global last_PLeft, last_PRight
   global robo_orientation
   
   robo_left_enc = int.from_bytes(data[0:2], byteorder='big', signed=True)
@@ -169,34 +169,37 @@ def rdata_enc_feedback(data):
   if robo_state == rWaitCE:
     last_left_enc = robo_left_enc
     last_right_enc = robo_right_enc
-    P1 = 0
-    P2 = 0
-    last_P1 = 0
-    last_P2 = 0
+    PLeft = 0
+    PRight = 0
+    last_PLeft = 0
+    last_PRight = 0
     robo_vector_xy = [0, 0]
     robo_vector_pol = [0, 0]
     robo_orientation = 0
     print('INITIALIZE', robo_left_enc, robo_right_enc, robo_vector_xy[0], robo_vector_xy[1])
     robo_state = rIdle
+  
+  change_left = (robo_left_enc - last_left_enc)
+  if change_left > 32767:
+    change_left -= 65535
+  elif change_left < -32768:
+    change_left += 65535
+  
+  change_right = (robo_right_enc - last_right_enc)
+  if change_right > 32767:
+    change_right -= 65535
+  elif change_right < -32768:
+    change_right += 65535
     
-    
-  P1 += (robo_left_enc - last_left_enc)
-  if P1 > 32767:
-    P1 -= 65535
-  elif P1 < -32768:
-    P1 += 65535
-  P2 += (robo_right_enc - last_right_enc)
-  if P2 > 32767:
-    P2 -= 65535
-  elif P2 < -32768:
-    P2 += 65535
+  PLeft += change_left
+  PRight += change_right
   
   last_left_enc = robo_left_enc
   last_right_enc = robo_right_enc
   
-  robo_calc_pos(P1, P2)
+  robo_calc_pos(PLeft, PRight)
 
-  #print(f'polar r: {polar_r(P1, P2)} deg: {radians_to_deg(polar_theta(P1, P2))}')
+  #print(f'polar r: {polar_r(PLeft, PRight)} deg: {radians_to_deg(polar_theta(PLeft, PRight))}')
   
 def rdata_travel_angle(data):
   global robo_state, robo_travel, robo_angle
@@ -211,10 +214,10 @@ def rdata_travel_angle(data):
   
   if (robo_state != rIdle)and (robo_state != rCloseLoop):
     #print(f'travel: {robo_travel} polar r: {robo_vector_pol[0]}    angle: {robo_angle} deg: {radians_to_deg(robo_vector_pol[1])}')
-    #print(f'travel: {robo_travel:.1f} x: {robo_vector_xy[0]:.1f}    angle: {robo_angle:.1f} theta: {radians_to_deg(robo_orientation):.1f}  y: {robo_vector_xy[1]:.1f}  P1: {P1}  P2: {P2}')
-    print(P1, P2)
+    #print(f'travel: {robo_travel:.1f} x: {robo_vector_xy[0]:.1f}    angle: {robo_angle:.1f} theta: {radians_to_deg(robo_orientation):.1f}  y: {robo_vector_xy[1]:.1f}  PLeft: {PLeft}  PRight: {PRight}')
+    print(PLeft, PRight)
   elif (robo_state != rCloseLoop):
-    print(P1, P2)
+    print(PLeft, PRight)
 
 
 try:
@@ -305,12 +308,12 @@ def robo_read():
         robo_state = rIdle
         
     if robo_state == rCloseLoop:
-      if P1 >= (CPR*10):
+      if PLeft >= (CPR*10):
         print('out of close loop')
         robo_drive(0, 0)
         robo_state = rIdle
       else:
-        if P1 >= (CPR * 9.2):
+        if PLeft >= (CPR * 9.2):
           pwm_norm = 25
         else:
           pwm_norm = pwm_max * 0.8
@@ -321,7 +324,7 @@ def robo_read():
           pwm_R = min(pwm_norm, max(20, pwm_R - pwm_accel))
           
         if time.time() > pwm_update_time:
-          error = ((P2 - P1) * 1.8) - pwm_last_error
+          error = ((PRight - PLeft) * 1.8) - pwm_last_error
           pwm_L = pwm_L + error
           if pwm_L < -pwm_max:
             pwm_L = -pwm_max
@@ -389,7 +392,7 @@ def robo_run():
 def robo_pwm(R, L):
   R = round(R)
   L = round(L)
-  print('pwm', R, L, P1, P2, P2-P1)
+  print('pwm', R, L, PLeft, PRight, PRight-PLeft)
   robo_send([146] + robo_num(R) + robo_num(L))
 
 
@@ -440,8 +443,8 @@ if ser_port:
         key = ''
       elif keyboard.is_pressed('w'):   #pwm
         robo_state = rCloseLoop
-      elif keyboard.is_pressed('i'):   #show p1 and p2
-        print(P1, P2)
+      elif keyboard.is_pressed('i'):   #show PLeft and PRight
+        print(PLeft, PRight)
       elif keyboard.is_pressed('c'):
         robo_state = rClearFeedback
       elif keyboard.is_pressed('q'):   #quit
