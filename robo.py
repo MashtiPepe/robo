@@ -175,7 +175,7 @@ def rdata_check(data):
       time.sleep(1)
       robo_full_control()
       time.sleep(1)
-      robo_drive(0, -1)        
+      #robo_drive(0, -1)        
       data_request_time = time.time() + 4
     return False
   else:
@@ -274,7 +274,7 @@ def robo_read():
         rdata_button_press(data[11])      #packet 18
         rdata_enc_feedback(data[52:56])   #packets 43 and 44
         rdata_travel_angle(data[12:16])   #packets 19 and 20
-        data_request_time = time.time() + 0.1
+        data_request_time = time.time() + 0.088
       else:
         print(data[40])
       
