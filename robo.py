@@ -17,6 +17,8 @@ rGoBack           = 'go back'
 rWaitGoBack       = 'wait go back'
 rFaceForward      = 'face forward'
 rWaitFaceForward  = 'wait face forward'
+rCloseLoop        = 'close loop'
+rCloseLoopSpin    = 'close loop spin'
 
 robo_state = 'idle'
 #these two are calculated by the firmware
@@ -37,6 +39,14 @@ key = ''
 data_request_time = 0
 data_rcv = False
 
+pwm_R = 0
+pwm_L = 0
+pwm_norm = 70
+pwm_max = 90
+pwm_accel = 2
+pwm_update_time = 0
+pwm_last_error = 0
+
 #
 # robot wheel radius rw = 36 mm
 # counts per revolution of wheel is CPR = 508.8 (from documentation)
@@ -47,7 +57,7 @@ data_rcv = False
 # theta (orientation range 0 to 2 pi) = (p2 - p2) / (D / 2)
 #
 rw = 36
-CPR = 503
+CPR = 508.5
 D = 252   #217 inside dim, 232 center dim, 247 outside dim
 R = D/2
 pi_rw = math.pi * rw
@@ -199,10 +209,12 @@ def rdata_travel_angle(data):
     robo_angle = 0
     robo_state = rWaitCE
   
-  if robo_state != rIdle:    
+  if (robo_state != rIdle)and (robo_state != rCloseLoop):
     #print(f'travel: {robo_travel} polar r: {robo_vector_pol[0]}    angle: {robo_angle} deg: {radians_to_deg(robo_vector_pol[1])}')
-    print(f'travel: {robo_travel:.1f} x: {robo_vector_xy[0]:.1f}    angle: {robo_angle:.1f} theta: {radians_to_deg(robo_orientation):.1f}  y: {robo_vector_xy[1]:.1f}')
-    #print(P1, P2)
+    #print(f'travel: {robo_travel:.1f} x: {robo_vector_xy[0]:.1f}    angle: {robo_angle:.1f} theta: {radians_to_deg(robo_orientation):.1f}  y: {robo_vector_xy[1]:.1f}  P1: {P1}  P2: {P2}')
+    print(P1, P2)
+  elif (robo_state != rCloseLoop):
+    print(P1, P2)
 
 
 try:
@@ -224,6 +236,7 @@ def robo_read():
   global robo_state, robo_travel, robo_angle
   global key
   global data_rcv
+  global pwm_R, pwm_L, pwm_update_time, pwm_last_error, pwm_norm
   
   while thread_run:
     time.sleep(0.1)
@@ -260,7 +273,7 @@ def robo_read():
       robo_drive(50, 32767)
       
     if robo_state == rWaitForward:
-      if robo_vector_xy[0] >= 1552.57:
+      if robo_vector_xy[0] >= 500:
         robo_drive(0, 0)
         robo_state = rFaceBackward
         
@@ -290,6 +303,35 @@ def robo_read():
       if abs(robo_orientation - 0) <= radian_in_pos or abs(robo_orientation - two_pi) <= radian_in_pos:
         robo_drive(0, 0)
         robo_state = rIdle
+        
+    if robo_state == rCloseLoop:
+      if P1 >= (CPR*10):
+        print('out of close loop')
+        robo_drive(0, 0)
+        robo_state = rIdle
+      else:
+        if P1 >= (CPR * 9.2):
+          pwm_norm = 25
+        else:
+          pwm_norm = pwm_max * 0.8
+          
+        if pwm_R < pwm_norm:
+          pwm_R = min(pwm_norm, max(20, pwm_R + pwm_accel))
+        elif pwm_R > pwm_norm:
+          pwm_R = min(pwm_norm, max(20, pwm_R - pwm_accel))
+          
+        if time.time() > pwm_update_time:
+          error = ((P2 - P1) * 1.8) - pwm_last_error
+          pwm_L = pwm_L + error
+          if pwm_L < -pwm_max:
+            pwm_L = -pwm_max
+          elif pwm_L > pwm_max:
+            pwm_L = pwm_max
+          pwm_update_time = time.time() + 0.2
+          pwm_last_error = error + (pwm_last_error * 0.8)
+        
+          robo_pwm(pwm_R, pwm_L)
+
       
     
 
@@ -343,6 +385,12 @@ def robo_run():
   if robo_state == rIdle:
     robo_sing()
     robo_state = rForward
+    
+def robo_pwm(R, L):
+  R = round(R)
+  L = round(L)
+  print('pwm', R, L, P1, P2, P2-P1)
+  robo_send([146] + robo_num(R) + robo_num(L))
 
 
 #main routine
@@ -365,7 +413,7 @@ if ser_port:
 
   try:
     while True:
-      time.sleep(0.2)
+      time.sleep(0.1)
       
       #get robot packets
       if data_rcv or (time.time() > data_request_time):
@@ -377,11 +425,11 @@ if ser_port:
       if keyboard.is_pressed('b') or key == 'b':     #begin the program
         robo_run()
         key = ''
-      elif keyboard.is_pressed('r'):   #reset
-        robo_reset()
-      elif keyboard.is_pressed('s') or key == 's':   #beep
-        robo_sing()
-        key = ''
+      #elif keyCode == 'r':   #reset
+      #  robo_reset()
+      #elif keyboard.is_pressed('s') or key == 's':   #beep
+      #  robo_sing()
+      #  key = ''
       elif keyboard.is_pressed('t'):   #turn clockwise
         robo_drive(50, -1)
       elif keyboard.is_pressed('g'):   #straight
@@ -390,6 +438,8 @@ if ser_port:
         robo_state = rIdle
         robo_drive(0, -1)        
         key = ''
+      elif keyboard.is_pressed('w'):   #pwm
+        robo_state = rCloseLoop
       elif keyboard.is_pressed('i'):   #show p1 and p2
         print(P1, P2)
       elif keyboard.is_pressed('c'):
