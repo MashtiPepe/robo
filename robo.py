@@ -55,6 +55,7 @@ R_L_Offset = 0
 R_Target = 0
 L_Target = 0
 C_Mode = cModeStraight
+recover = False
 
 #
 # robot wheel radius rw = 36 mm
@@ -163,8 +164,9 @@ def rdata_check(data):
   global robo_state, data_request_time
   
   if data != 3:
-    print('------------ SOMETHING WRONG')
     if check_something_wrong:
+      print('------------ SOMETHING WRONG')
+      recover = True
       data_request_time = time.time() + 10
       robo_state = rIdle
       robo_close()
@@ -339,7 +341,7 @@ def robo_read():
         #robo_drive(0, 0)
         robo_state = rIdle
       else:
-        if abs(PRight - R_Target) < 500:
+        if abs(PRight - R_Target) < 600:
           pwm_norm = 25
         else:
           pwm_norm = pwm_max * 0.9
@@ -436,7 +438,7 @@ def _keypress(event):
 def robo_process():
   global robo_state
   global thread_run, init_feedback, key, keysdown, check_something_wrong
-  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L
+  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L, recover
 
   
   try:
@@ -476,18 +478,20 @@ def robo_process():
         keysdown = {}
       elif 'w' in keysdown:   #pwm straight
         robo_state = rIdle
-        if C_Mode == cModeStraight:
-          C_Mode = cModeSpin
-          R_L_Offset = R_Target + L_Target
-          R_Target = R_Target + 815  #(CPR * 1.555)
-          L_Target -= 815
-        else:
-          C_Mode = cModeStraight
-          R_L_Offset = R_Target - L_Target
-          R_Target += (CPR * 10)
-          L_Target += (CPR * 10)
-          #R_L_Offset = PRight - PLeft
+        if not recover:
+          if C_Mode == cModeStraight:
+            C_Mode = cModeSpin
+            R_L_Offset = R_Target + L_Target
+            R_Target = R_Target + 815  #(CPR * 1.555)
+            L_Target -= 815
+          else:
+            C_Mode = cModeStraight
+            R_L_Offset = R_Target - L_Target
+            R_Target += (CPR * 10)
+            L_Target += (CPR * 10)
+            #R_L_Offset = PRight - PLeft
         
+        recover = False
         pwm_R = 0
         pwm_L = 0
         robo_state = rCloseLoop
