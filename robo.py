@@ -39,8 +39,8 @@ PRight = 0
 key = ''
 keysdown = {}
 init_feedback = 0
+check_something_wrong = False
 data_request_time = 0
-data_rcv = False
 
 pwm_R = 0
 pwm_L = 0
@@ -148,7 +148,26 @@ def robo_calc_pos(PLeft, PRight):
   last_PLeft = PLeft
   last_PRight = PRight
   
-
+def rdata_check(data):
+  global robo_state, data_request_time
+  
+  if data != 3:
+    print('------------ SOMETHING WRONG')
+    if check_something_wrong:
+      data_request_time = time.time() + 10
+      robo_state = rIdle
+      robo_close()
+      time.sleep(1)
+      robo_init()
+      time.sleep(1)
+      robo_full_control()
+      time.sleep(1)
+      robo_drive(0, -1)        
+      data_request_time = time.time() + 4
+    return False
+  else:
+    return True
+    
 def rdata_button_press(data):
   global key, robo_state
   
@@ -229,23 +248,27 @@ def robo_read():
   global thread_run
   global robo_state, robo_travel, robo_angle
   global key
-  global data_rcv
+  global data_request_time
   global pwm_R, pwm_L, pwm_update_time, pwm_last_error, pwm_norm
   
   while thread_run:
     time.sleep(0.1)
     data = ser.read(80)
-    if len(data) > 0:
-      #print(len(data), data.decode('iso-8859-1'))
-      #print(len(data))
-      data_rcv = True
     
     #response to packet id 100  
     if len(data) == 80:
-      rdata_button_press(data[11])      #packet 18
-      rdata_enc_feedback(data[52:56])   #packets 43 and 44
-      rdata_travel_angle(data[12:16])   #packets 19 and 20
+      if rdata_check(data[40]):             #packet 35 (oi mode)
+        rdata_button_press(data[11])      #packet 18
+        rdata_enc_feedback(data[52:56])   #packets 43 and 44
+        rdata_travel_angle(data[12:16])   #packets 19 and 20
+        data_request_time = time.time() + 0.1
+      else:
+        print(data[40])
       
+    #if len(data) > 0:
+      #print(len(data), data.decode('iso-8859-1'))
+      #print(len(data))
+      #data_rcv = True
       
     #read the button presses on top of robot
     if len(data) == 1:
@@ -301,7 +324,8 @@ def robo_read():
     if robo_state == rCloseLoop:
       if PRight >= (CPR*10):
         print('out of close loop')
-        robo_drive(0, 0)
+        robo_pwm(0, 0)
+        #robo_drive(0, 0)
         robo_state = rIdle
       else:
         if PRight >= (CPR * 9.2):
@@ -368,8 +392,7 @@ def robo_full_control():
 def robo_request_packet(packet):
   global data_request_time
   
-  data_rcv = False
-  data_request_time = time.time() + 1
+  data_request_time = time.time() + 4
   
   robo_send([142, packet]);
   
@@ -399,17 +422,19 @@ def _keypress(event):
 
 def robo_process():
   global robo_state
-  global thread_run, init_feedback, key, keysdown
+  global thread_run, init_feedback, key, keysdown, check_something_wrong
   
   try:
     while thread_run:
       time.sleep(0.1)
       
       #get robot packets
-      if data_rcv or (time.time() > data_request_time):
+      if time.time() > data_request_time:
         robo_request_packet(100)  #get 80 bytes of info back
         if init_feedback > 0:
           init_feedback -= 1
+          if init_feedback == 0:
+            check_something_wrong = True
           robo_state = rClearFeedback
       
       if 'b' in keysdown or key == 'b':     #begin the program
