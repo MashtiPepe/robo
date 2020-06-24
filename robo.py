@@ -1,9 +1,10 @@
-import time
 import serial
+import time
 import threading
-import keyboard
+#import keyboard
 import os
 import math
+import tkinter
 
 rIdle             = 'idle'
 rClearFeedback    = 'clear feedback'
@@ -36,6 +37,8 @@ PLeft = 0
 PRight = 0
 
 key = ''
+keysdown = {}
+init_feedback = 0
 data_request_time = 0
 data_rcv = False
 
@@ -220,19 +223,7 @@ def rdata_travel_angle(data):
     print(PLeft, PRight)
 
 
-try:
-  print(os.name)
-  if os.name == 'posix':
-    ser = serial.Serial(port="/dev/ttyUSB0", baudrate=115200, timeout=0, rtscts=0, xonxoff=0)
-  else:
-    ser = serial.Serial(port="COM37", baudrate=115200, timeout=0, rtscts=0, xonxoff=0)
-  time.sleep(0.5)
-  ser_port = True
-  print('serial port open okay')
-  
-except:
-  ser_port = False
-  print('Robo not connected')
+
 
 def robo_read():
   global thread_run
@@ -308,12 +299,12 @@ def robo_read():
         robo_state = rIdle
         
     if robo_state == rCloseLoop:
-      if PLeft >= (CPR*10):
+      if PRight >= (CPR*10):
         print('out of close loop')
         robo_drive(0, 0)
         robo_state = rIdle
       else:
-        if PLeft >= (CPR * 9.2):
+        if PRight >= (CPR * 9.2):
           pwm_norm = 25
         else:
           pwm_norm = pwm_max * 0.8
@@ -324,7 +315,7 @@ def robo_read():
           pwm_R = min(pwm_norm, max(20, pwm_R - pwm_accel))
           
         if time.time() > pwm_update_time:
-          error = ((PRight - PLeft) * 1.8) - pwm_last_error
+          error = (error_function(PLeft, PRight) * 1.8) - pwm_last_error
           pwm_L = pwm_L + error
           if pwm_L < -pwm_max:
             pwm_L = -pwm_max
@@ -355,6 +346,7 @@ def robo_init():
   robo_send([128])
   
 def robo_close():
+  print('robo closed')
   robo_send([173])
   
 def robo_sing():
@@ -389,11 +381,90 @@ def robo_run():
     robo_sing()
     robo_state = rForward
     
+def error_function(PLeft, PRight):
+  #return PRight - PLeft
+  return -(PRight + PLeft)
+    
 def robo_pwm(R, L):
   R = round(R)
   L = round(L)
-  print('pwm', R, L, PLeft, PRight, PRight-PLeft)
+  print('pwm', R, L, PLeft, PRight, error_function(PLeft, PRight))
   robo_send([146] + robo_num(R) + robo_num(L))
+
+
+def _keypress(event):
+    global keysdown
+    keysdown[event.keysym] = 1
+    print(keysdown)
+
+def robo_process():
+  global robo_state
+  global thread_run, init_feedback, key, keysdown
+  
+  try:
+    while thread_run:
+      time.sleep(0.1)
+      
+      #get robot packets
+      if data_rcv or (time.time() > data_request_time):
+        robo_request_packet(100)  #get 80 bytes of info back
+        if init_feedback > 0:
+          init_feedback -= 1
+          robo_state = rClearFeedback
+      
+      if 'b' in keysdown or key == 'b':     #begin the program
+        keysdown = {}
+        robo_run()
+        key = ''
+      #elif keyCode == 'r':   #reset
+      #  keysdown = {}
+      #  robo_reset()
+      #elif keyboard.is_pressed('s') or key == 's':   #beep
+      #  keysdown = {}
+      #  robo_sing()
+      #  key = ''
+      elif 't' in keysdown:   #turn clockwise
+        keysdown = {}
+        robo_drive(50, -1)
+      elif 'g' in keysdown:   #straight
+        keysdown = {}
+        robo_drive(20, 32767)
+      elif 'p' in keysdown or key == 'p':   #stop
+        robo_state = rIdle
+        robo_drive(0, -1)        
+        key = ''
+        keysdown = {}
+      elif 'w' in keysdown:   #pwm
+        robo_state = rCloseLoop
+        keysdown = {}
+      elif 'i' in keysdown:   #show PLeft and PRight
+        keysdown = {}
+        print(PLeft, PRight)
+      elif 'c' in keysdown:
+        keysdown = {}
+        robo_state = rClearFeedback
+      elif 'q' in keysdown:   #quit
+        thread_run = False
+        keysdown = {}
+        time.sleep(0.9)
+        _root_window.destroy()
+  
+  except KeyboardInterrupt:
+    pass
+  
+try:
+  print(os.name)
+  if os.name == 'posix':
+    ser = serial.Serial(port="/dev/ttyUSB0", baudrate=115200, timeout=3, rtscts=0, xonxoff=0)
+  else:
+    ser = serial.Serial(port="COM37", baudrate=115200, timeout=3, rtscts=0, xonxoff=0)
+  time.sleep(0.5)
+  ser_port = True
+  print('serial port open okay')
+  
+except:
+  ser_port = False
+  print('Robo not connected')
 
 
 #main routine
@@ -407,54 +478,26 @@ if ser_port:
   t_rx.setDaemon(True)
   t_rx.start()
 
+  t_main = threading.Thread(name='main_thread', target=robo_process, args=[])
+  t_main.setDaemon(True)
+  t_main.start()
+
+  # Create the root window
+  _root_window = tkinter.Tk()
+  #_root_window.protocol('WM_DELETE_WINDOW', _destroy_window)
+  _root_window.title('iRobot')
+  _root_window.resizable(0, 0)
+  _root_window.bind( "<KeyPress>", _keypress )
+  
   #open the OI
   robo_init()
   time.sleep(1)
   robo_full_control()
   robo_request_time = time.time() + 3
   init_feedback = 3
+  
+  _root_window.mainloop()
 
-  try:
-    while True:
-      time.sleep(0.1)
-      
-      #get robot packets
-      if data_rcv or (time.time() > data_request_time):
-        robo_request_packet(100)  #get 80 bytes of info back
-        if init_feedback > 0:
-          init_feedback -= 1
-          robo_state = rClearFeedback
-      
-      if keyboard.is_pressed('b') or key == 'b':     #begin the program
-        robo_run()
-        key = ''
-      #elif keyCode == 'r':   #reset
-      #  robo_reset()
-      #elif keyboard.is_pressed('s') or key == 's':   #beep
-      #  robo_sing()
-      #  key = ''
-      elif keyboard.is_pressed('t'):   #turn clockwise
-        robo_drive(50, -1)
-      elif keyboard.is_pressed('g'):   #straight
-        robo_drive(20, 32767)
-      elif keyboard.is_pressed('p') or key == 'p':   #stop
-        robo_state = rIdle
-        robo_drive(0, -1)        
-        key = ''
-      elif keyboard.is_pressed('w'):   #pwm
-        robo_state = rCloseLoop
-      elif keyboard.is_pressed('i'):   #show PLeft and PRight
-        print(PLeft, PRight)
-      elif keyboard.is_pressed('c'):
-        robo_state = rClearFeedback
-      elif keyboard.is_pressed('q'):   #quit
-        thread_run = False
-        time.sleep(0.9)
-        break
-  
-  except KeyboardInterrupt:
-    pass
-  
   #close the OI
   robo_close()
 
