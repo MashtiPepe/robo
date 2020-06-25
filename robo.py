@@ -39,6 +39,9 @@ key = ''
 keysdown = {}
 init_feedback = 0
 check_something_wrong = False
+robo_stream_enabled = False
+robo_stream_mode = True
+robo_read_data = False
 data_request_time = 0
 
 pwm_R = 0
@@ -46,7 +49,6 @@ pwm_L = 0
 pwm_norm = 70
 pwm_max = 90
 pwm_accel = 3
-pwm_update_time = 0
 pwm_last_error = 0
 
 cModeStraight = 'straight'
@@ -55,7 +57,6 @@ R_L_Offset = 0
 R_Target = 0
 L_Target = 0
 C_Mode = cModeStraight
-recover = False
 
 #
 # robot wheel radius rw = 36 mm
@@ -166,7 +167,6 @@ def rdata_check(data):
   if data != 3:
     if check_something_wrong:
       print('------------ SOMETHING WRONG')
-      recover = True
       data_request_time = time.time() + 10
       robo_state = rIdle
       robo_close()
@@ -247,7 +247,7 @@ def rdata_travel_angle(data):
     robo_angle = 0
     robo_state = rWaitCE
   
-  if (robo_state != rIdle)and (robo_state != rCloseLoop):
+  if (robo_state != rIdle) and (robo_state != rCloseLoop):
     #print(f'travel: {robo_travel} polar r: {robo_vector_pol[0]}    angle: {robo_angle} deg: {radians_to_deg(robo_vector_pol[1])}')
     #print(f'travel: {robo_travel:.1f} x: {robo_vector_xy[0]:.1f}    angle: {robo_angle:.1f} theta: {radians_to_deg(robo_orientation):.1f}  y: {robo_vector_xy[1]:.1f}  PLeft: {PLeft}  PRight: {PRight}')
     print(PLeft, PRight)
@@ -259,109 +259,153 @@ def rdata_travel_angle(data):
 
 def robo_read():
   global thread_run
-  global robo_state, robo_travel, robo_angle
-  global key
-  global data_request_time
-  global pwm_R, pwm_L, pwm_update_time, pwm_last_error, pwm_norm
   
   while thread_run:
     time.sleep(0.1)
-    data = ser.read(80)
     
-    #response to packet id 100  
-    if len(data) == 80:
-      if rdata_check(data[40]):             #packet 35 (oi mode)
-        rdata_button_press(data[11])      #packet 18
-        rdata_enc_feedback(data[52:56])   #packets 43 and 44
-        rdata_travel_angle(data[12:16])   #packets 19 and 20
-        data_request_time = time.time() + 0.088
+    if robo_read_data:
+      if robo_stream_enabled and robo_stream_mode:
+        data = ser.read(8 * 84)
+        offset = 0
+        for i in range(len(data)):
+          if data[i] == 19:
+            offset = i
+            break
+            
+      elif not robo_stream_mode:
+        data = ser.read(80)
+    else:
+      continue
+      
+    #print(len(data), data[0+offset], data[84+offset], data[84+84+offset], offset)
+    #every once in a while, the offset is 37... not in documentation...
+    if offset > 0:
+      garbage = ser.read(offset)
+      
+    if len(data) > (offset + 84 + 84 + 84 + 84 + 84 + 84):
+      if (data[0+offset] == 19) and (data[84+offset] == 19) and (data[168+offset] == 19) and (data[252+offset] == 19) and (data[336+offset] == 19) and (data[420+offset] == 19):
+        sub_data = data[0+offset+3:0+offset+83]
+        act_on_data(sub_data)
+      
+        sub_data = data[84+offset+3:84+offset+83]
+        act_on_data(sub_data)
+      
+        sub_data = data[168+offset+3:168+offset+83]
+        act_on_data(sub_data)
+      
+        sub_data = data[252+offset+3:252+offset+83]
+        act_on_data(sub_data)
+      
+        sub_data = data[336+offset+3:336+offset+83]
+        act_on_data(sub_data)
+      
+        sub_data = data[420+offset+3:420+offset+83]
+        act_on_data(sub_data)
       else:
-        print(data[40])
-      
-    #if len(data) > 0:
-      #print(len(data), data.decode('iso-8859-1'))
-      #print(len(data))
-      #data_rcv = True
-      
-    #read the button presses on top of robot
-    if len(data) == 1:
-      key = rdata_button_press(data[0])
+        continue
+
+
+def act_on_data(data):       
+  global robo_state, robo_travel, robo_angle
+  global key
+  global data_request_time
+  global pwm_R, pwm_L, pwm_last_error, pwm_norm
+  
+  #response to packet id 100  
+  if len(data) == 80:
+    if rdata_check(data[40]):             #packet 35 (oi mode)
+      rdata_button_press(data[11])      #packet 18
+      rdata_enc_feedback(data[52:56])   #packets 43 and 44
+      rdata_travel_angle(data[12:16])   #packets 19 and 20
+      data_request_time = time.time() + 0.088
+    else:
+      print(data[40])
     
-    #response to packet ID 101.  Read the raw encoder feedback    
-    if len(data) == 28:
-      rdata_enc_feedback(data[0:4])
     
-    #response to packet ID 2  
-    if len(data) == 6:
-      rdata_travel_angle(data[2:6])
+  #read the button presses on top of robot
+  if len(data) == 1:
+    key = rdata_button_press(data[0])
+  
+  #response to packet ID 101.  Read the raw encoder feedback    
+  if len(data) == 28:
+    rdata_enc_feedback(data[0:4])
+  
+  #response to packet ID 2  
+  if len(data) == 6:
+    rdata_travel_angle(data[2:6])
+  
+  if robo_state == rClearFeedback:
+    robo_state = rWaitCF
     
-    if robo_state == rClearFeedback:
-      robo_state = rWaitCF
-      
-    if robo_state == rForward:
-      robo_state = rWaitForward
-      robo_drive(50, 32767)
-      
-    if robo_state == rWaitForward:
-      if robo_vector_xy[0] >= 500:
-        robo_drive(0, 0)
-        robo_state = rFaceBackward
-        
-    if robo_state == rFaceBackward:
-      robo_state = rWaitFaceBackward
-      robo_drive(50, 1)
-      
-    if robo_state == rWaitFaceBackward:
-      if abs(robo_orientation - math.pi) <= radian_in_pos:
-        robo_drive(0, 0)
-        robo_state = rGoBack
-      
-    if robo_state == rGoBack:
-      robo_state = rWaitGoBack
-      robo_drive(50, 32767)
+  if robo_state == rForward:
+    robo_state = rWaitForward
+    robo_drive(50, 32767)
     
-    if robo_state == rWaitGoBack:
-      if robo_vector_xy[0] <= 0:
-        robo_drive(0, 0)
-        robo_state = rFaceForward
-        
-    if robo_state == rFaceForward:
-      robo_state = rWaitFaceForward
-      robo_drive(50, -1)
+  if robo_state == rWaitForward:
+    if robo_vector_xy[0] >= 500:
+      robo_drive(0, 0)
+      robo_state = rFaceBackward
       
-    if robo_state == rWaitFaceForward:
-      if abs(robo_orientation - 0) <= radian_in_pos or abs(robo_orientation - two_pi) <= radian_in_pos:
-        robo_drive(0, 0)
-        robo_state = rIdle
-        
-    if robo_state == rCloseLoop:
-      if PRight >= R_Target:
-        print('out of close loop')
-        robo_pwm(0, 0)
-        #robo_drive(0, 0)
-        robo_state = rIdle
+  if robo_state == rFaceBackward:
+    robo_state = rWaitFaceBackward
+    robo_drive(50, 1)
+    
+  if robo_state == rWaitFaceBackward:
+    if abs(robo_orientation - math.pi) <= radian_in_pos:
+      robo_drive(0, 0)
+      robo_state = rGoBack
+    
+  if robo_state == rGoBack:
+    robo_state = rWaitGoBack
+    robo_drive(50, 32767)
+  
+  if robo_state == rWaitGoBack:
+    if robo_vector_xy[0] <= 0:
+      robo_drive(0, 0)
+      robo_state = rFaceForward
+      
+  if robo_state == rFaceForward:
+    robo_state = rWaitFaceForward
+    robo_drive(50, -1)
+    
+  if robo_state == rWaitFaceForward:
+    if abs(robo_orientation - 0) <= radian_in_pos or abs(robo_orientation - two_pi) <= radian_in_pos:
+      robo_drive(0, 0)
+      robo_state = rIdle
+      
+  if robo_state == rCloseLoop:
+    if PRight >= R_Target:
+      print('out of close loop')
+      robo_pwm(0, 0)
+      #robo_drive(0, 0)
+      robo_state = rIdle
+    else:
+      if abs(PRight - R_Target) < 600:
+        pwm_norm = 25
       else:
-        if abs(PRight - R_Target) < 600:
-          pwm_norm = 25
-        else:
-          pwm_norm = pwm_max * 0.9
-          
-        if pwm_R < pwm_norm:
-          pwm_R = max(35, pwm_R + pwm_accel)
-        elif pwm_R > pwm_norm:
-          pwm_R = max(35, pwm_R - pwm_accel)
-          
-        if time.time() > pwm_update_time:
-          error = (error_function(PLeft, PRight) * 1.8) - pwm_last_error
-          pwm_L = pwm_L + error
-          if pwm_L < -pwm_max:
-            pwm_L = -pwm_max
-          elif pwm_L > pwm_max:
-            pwm_L = pwm_max
-          pwm_update_time = time.time() + 0.2
-          pwm_last_error = error + (pwm_last_error * 0.8)
+        pwm_norm = pwm_max * 0.6
         
-          robo_pwm(pwm_R, pwm_L)
+      if pwm_R < pwm_norm:
+        pwm_R = max(35, pwm_R + pwm_accel)
+      elif pwm_R > pwm_norm:
+        pwm_R = max(35, pwm_R - pwm_accel)
+      
+      error = error_function(PLeft, PRight)  
+      correction = (error * 0.16) - pwm_last_error
+      pwm_L = pwm_L + correction
+      
+      #if error > 0 and pwm_L < 20 and pwm_L > 0:
+      #  pwm_L = 20
+      #elif error < 0 and pwm_L > -20 and pwm_L < 0:
+      #  pwm_L = -20
+        
+      if pwm_L < -pwm_max:
+        pwm_L = -pwm_max
+      elif pwm_L > pwm_max:
+        pwm_L = pwm_max
+      pwm_last_error = correction + (pwm_last_error * 0.99)
+    
+      robo_pwm(pwm_R, pwm_L)
 
       
     
@@ -383,8 +427,11 @@ def robo_init():
   robo_send([128])
   
 def robo_close():
-  print('robo closed')
-  robo_send([173])
+  global robo_stream_enabled
+  
+  print('robo/stream closed')
+  robo_stream_enabled = False
+  robo_send([150, 0, 173])
   
 def robo_sing():
   print('sing')
@@ -409,6 +456,14 @@ def robo_request_packet(packet):
   
   robo_send([142, packet]);
   
+def robo_stream(packet):
+  global robo_stream_enabled
+  
+  if not robo_stream_enabled:
+    print('enable streaming')
+    robo_send([148, 1, packet]);
+    robo_stream_enabled = True
+  
 def robo_run():
   global robo_state
   
@@ -426,7 +481,8 @@ def error_function(PLeft, PRight):
 def robo_pwm(R, L):
   R = round(R)
   L = round(L)
-  print(f'pwm {R} {L} {PLeft} {PRight} {error_function(PLeft, PRight)} theta: {radians_to_deg(robo_orientation):.1f}')
+  #print(f'pwm {R} {L} {PLeft} {PRight} {error_function(PLeft, PRight)} theta: {radians_to_deg(robo_orientation):.1f}')
+  print(f'pwm {R} {L} {PLeft} {PRight} {error_function(PLeft, PRight)} R_L_Offser: {R_L_Offset}')
   robo_send([146] + robo_num(R) + robo_num(L))
 
 
@@ -438,8 +494,10 @@ def _keypress(event):
 def robo_process():
   global robo_state
   global thread_run, init_feedback, key, keysdown, check_something_wrong
-  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L, recover
-
+  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L
+  global robo_read_data
+  
+  data_request_time = time.time() + 3
   
   try:
     while thread_run:
@@ -447,7 +505,13 @@ def robo_process():
       
       #get robot packets
       if time.time() > data_request_time:
-        robo_request_packet(100)  #get 80 bytes of info back
+        if robo_stream_mode:
+          robo_stream(100)          #streams 80 bytes + 4 bytes of overhead
+        else:
+          robo_request_packet(100)  #get 80 bytes of info back
+          
+        robo_read_data = True
+           
         if init_feedback > 0:
           init_feedback -= 1
           if init_feedback == 0:
@@ -478,20 +542,18 @@ def robo_process():
         keysdown = {}
       elif 'w' in keysdown:   #pwm straight
         robo_state = rIdle
-        if not recover:
-          if C_Mode == cModeStraight:
-            C_Mode = cModeSpin
-            R_L_Offset = R_Target + L_Target
-            R_Target = R_Target + 815  #(CPR * 1.555)
-            L_Target -= 815
-          else:
-            C_Mode = cModeStraight
-            R_L_Offset = R_Target - L_Target
-            R_Target += (CPR * 10)
-            L_Target += (CPR * 10)
-            #R_L_Offset = PRight - PLeft
+        #if C_Mode == cModeStraight:
+        #  C_Mode = cModeSpin
+        #  R_L_Offset = R_Target + L_Target
+        #  R_Target = R_Target + 815  #(CPR * 1.555)
+        #  L_Target -= 815
+        #else:
+        C_Mode = cModeStraight
+        R_L_Offset = R_Target - L_Target
+        R_Target += (CPR * 10)
+        L_Target += (CPR * 10)
+        #R_L_Offset = PRight - PLeft
         
-        recover = False
         pwm_R = 0
         pwm_L = 0
         robo_state = rCloseLoop
@@ -504,7 +566,6 @@ def robo_process():
         robo_state = rClearFeedback
       elif 'q' in keysdown:   #quit
         thread_run = False
-        ser.flush()
         keysdown = {}
         time.sleep(0.9)
         _root_window.destroy()
@@ -558,6 +619,8 @@ if ser_port:
   
   _root_window.mainloop()
 
+  ser.flush()
+  
   #close the OI
   robo_close()
 
