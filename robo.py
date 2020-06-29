@@ -22,8 +22,11 @@ rCloseLoop        = 'close loop'
 
 #world representation
 world_size = 500
+half_world = world_size // 2
 grid_world = np.zeros((world_size, world_size), dtype=np.uint8)
 
+robo_explore = False
+explore_actions = []
 robo_state = 'idle'
 #these two are calculated by the firmware
 robo_travel = 0
@@ -83,6 +86,7 @@ D = 232   #217 inside dim, 232 center dim, 247 outside dim
 R = D/2
 pi_rw = math.pi * rw
 pi_rw_div_CPR = pi_rw / CPR
+CPR_div_2_pi_rw = CPR / 2 / pi_rw
 two_pi = math.pi * 2
 radian_in_pos = two_pi / 100
 
@@ -90,6 +94,7 @@ radian_to_degrees = 180 / math.pi
 
 counts_180 = R * CPR / 2 / rw
 
+counts_limit = world_size * 10 * CPR_div_2_pi_rw
 
 # travel in mm
 def polar_r(PLeft, PRight):
@@ -213,7 +218,7 @@ def rdata_enc_feedback(data):
   global last_PLeft, last_PRight
   global R_Target, L_Target, R_L_Offset
   global robo_orientation
-  global grid_world
+  global grid_world, robo_explore, explore_actions
   
   robo_left_enc = int.from_bytes(data[0:2], byteorder='big', signed=True)
   robo_right_enc = int.from_bytes(data[2:4], byteorder='big', signed=True)
@@ -231,6 +236,9 @@ def rdata_enc_feedback(data):
     robo_vector_pol = [0, 0]
     robo_orientation = 0
     grid_world[::] = 0
+    robo_explore = False
+    explore_actions = []
+    _canvas_map.delete('all')
     print('INITIALIZE', robo_left_enc, robo_right_enc, robo_vector_xy[0], robo_vector_xy[1])
     robo_state = rIdle
   
@@ -605,10 +613,26 @@ def formatColor(r, g, b):
     return '#%02x%02x%02x' % (int(r * 255), int(g * 255), int(b * 255))
     
 def draw_robo():
-  global grid_world
+  global grid_world, explore_actions
   
-  map_x = (robo_vector_xy[0] // 10) + (world_size // 2)
-  map_y = (-robo_vector_xy[1] // 10) + (world_size // 2)
+  map_x = (robo_vector_xy[0] // 10) + half_world
+  map_y = (-robo_vector_xy[1] // 10) + half_world
+  
+  if robo_explore:
+    if map_x > half_world and len(explore_actions) == 0:
+      explore_actions += [cModeBackup, cModeSpin, cModeStraight]
+
+    if map_x < -half_world and len(explore_actions) == 0:
+      explore_actions += [cModeBackup, cModeSpin, cModeStraight]
+  
+    if map_y > half_world and len(explore_actions) == 0:
+      explore_actions += [cModeBackup, cModeSpin, cModeStraight]
+
+    if map_y < -half_world and len(explore_actions) == 0:
+      explore_actions += [cModeBackup, cModeSpin, cModeStraight]
+      
+    if len(explore_actions) > 0:
+      pass
   
   map_x = max(min(map_x, world_size), 0)
   map_y = max(min(map_y, world_size), 0)
@@ -622,12 +646,15 @@ def draw_robo():
   #print(map_x, map_y, deg)
   try:
     info = 1
+    o_color = 'black'
     for i in range(6):
       if bumper[i] > 50:
         info = 2
-        
-    grid_world[int(map_x)][int(map_y)] = info
-    _canvas_map.create_rectangle(map_x, map_y, map_x+1, map_y+1, fill = 'red')
+        o_color = 'red'
+    
+    if grid_world[int(map_x)][int(map_y)] == 0:    
+      grid_world[int(map_x)][int(map_y)] = info
+      _canvas_map.create_rectangle(map_x, map_y, map_x+1, map_y+1, outline = o_color)
   except:
     print('exception')
     
@@ -638,13 +665,13 @@ def draw_robo():
       bumper_arc[i] = _canvas_map.create_arc(map_x-size, map_y-size, map_x+size, map_y+size, start=deg-30+(i*10), extent=12, outline="red", style=tkinter.ARC, width=2)
     else:
       bumper_arc[i] = _canvas_map.create_arc(map_x-size, map_y-size, map_x+size, map_y+size, start=deg-30+(i*10), extent=12, outline="black", style=tkinter.ARC, width=2)
-
+      
 def update_info():
   global update_info_time
   
   if time.time() > update_info_time:
     _canvas.delete('all')
-    text((5, 10), formatColor(0, 0, 0), f'{robo_state}  {C_Mode}', font='Helvetica', size=8, style='normal', anchor="nw")
+    text((5, 10), formatColor(0, 0, 0), f'{robo_state}  {C_Mode}  {explore_actions}', font='Helvetica', size=8, style='normal', anchor="nw")
     text((5, 25), formatColor(0, 0, 0), f'R: {PRight}->{R_Target:.0f}  L: {PLeft}  Diff: {PRight - PLeft}', font='Helvetica', size=8, style='normal', anchor="nw")
     text((5, 40), formatColor(0, 0, 0), f'pwm {pwm_R:.0f} {pwm_L:.0f} {error_function(PLeft, PRight)} R_L_Offset: {R_L_Offset}', font='Helvetica', size=8, style='normal', anchor="nw")
 
@@ -707,6 +734,21 @@ def btnBackClick():
   pwm_L = 0
   robo_state = rCloseLoop
 
+def btnExploreClick():
+  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L
+  global robo_state, robo_explore, explore_actions
+  
+  R_L_Offset = PRight - PLeft - error_function(PLeft, PRight)
+  C_Mode = cModeStraight
+  R_Target += counts_limit
+  L_Target += counts_limit
+  
+  pwm_R = 0
+  pwm_L = 0
+  robo_state = rCloseLoop
+  explore_actions = []
+  robo_explore = True
+
 def btnClearClick():
   global robo_state
   
@@ -751,8 +793,10 @@ if ser_port:
   btnSpin.grid(row=3, column=0, sticky="we")
   btnBack = tkinter.Button(_frame, text="Backup", command=btnBackClick)
   btnBack.grid(row=4, column=0, sticky="we")
+  btnExplore = tkinter.Button(_frame, text="Explore", command=btnExploreClick)
+  btnExplore.grid(row=5, column=0, sticky="we")
   btnClear = tkinter.Button(_frame, text="Clear", command=btnClearClick)
-  btnClear.grid(row=5, column=0, sticky="we")
+  btnClear.grid(row=6, column=0, sticky="we")
 
   
   #open the OI
