@@ -663,6 +663,9 @@ def draw_robo():
       if bumper[i] > 50:
         info = 2
         o_color = 'red'
+        if len(explore_actions) == 0:
+          explore_actions += [cModeSpin]
+          btnBackClick()
     
     if grid_world[int(map_x)][int(map_y)] == 0:    
       grid_world[int(map_x)][int(map_y)] = info
