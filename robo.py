@@ -619,20 +619,32 @@ def draw_robo():
   map_y = (-robo_vector_xy[1] // 10) + half_world
   
   if robo_explore:
-    if map_x > half_world and len(explore_actions) == 0:
-      explore_actions += [cModeBackup, cModeSpin, cModeStraight]
+    if map_x > world_size and len(explore_actions) == 0:
+      explore_actions += [cModeSpin]
+      btnBackClick()
 
-    if map_x < -half_world and len(explore_actions) == 0:
-      explore_actions += [cModeBackup, cModeSpin, cModeStraight]
+    if map_x < 0 and len(explore_actions) == 0:
+      explore_actions += [cModeSpin]
+      btnBackClick()
   
-    if map_y > half_world and len(explore_actions) == 0:
-      explore_actions += [cModeBackup, cModeSpin, cModeStraight]
+    if map_y > world_size and len(explore_actions) == 0:
+      explore_actions += [cModeSpin]
+      btnBackClick()
 
-    if map_y < -half_world and len(explore_actions) == 0:
-      explore_actions += [cModeBackup, cModeSpin, cModeStraight]
+    if map_y < 0 and len(explore_actions) == 0:
+      explore_actions += [cModeSpin]
+      btnBackClick()
       
     if len(explore_actions) > 0:
-      pass
+      if robo_state == rIdle:
+        if explore_actions[0] == cModeBack:
+          explore_actions.pop(0)
+          btnBackClick()
+        elif explore_actions[0] == cModeSpin:
+          explore_actions.pop(0)
+          btnSpinClick()
+    elif robo_state == rIdle:
+      btnExploreClick()
   
   map_x = max(min(map_x, world_size), 0)
   map_y = max(min(map_y, world_size), 0)
@@ -690,9 +702,11 @@ def update_info():
     _canvas.update()
 
 def btnStopClick():
-  global robo_state
+  global robo_state, robo_explore, explore_options
   
   robo_state = rIdle
+  explore_options = []
+  robo_explore = False
   robo_drive(0, -1)        
 
 def btnGoClick():
@@ -727,8 +741,8 @@ def btnBackClick():
   
   R_L_Offset = PRight - PLeft - error_function(PLeft, PRight)
   C_Mode = cModeBack
-  R_Target -= (CPR * 3)
-  L_Target -= (CPR * 3)
+  R_Target = PRight - (CPR * 3)
+  L_Target = PLeft - (CPR * 3)
   
   pwm_R = 0
   pwm_L = 0
