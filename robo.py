@@ -55,7 +55,7 @@ update_info_time = 0
 pwm_R = 0
 pwm_L = 0
 pwm_norm = 70
-pwm_max = 90
+pwm_max = 120
 pwm_accel = 3
 pwm_last_error = 0
 
@@ -718,8 +718,8 @@ def btnGoClick():
   
   R_L_Offset = PRight - PLeft - error_function(PLeft, PRight)
   C_Mode = cModeStraight
-  R_Target += (CPR * 3)
-  L_Target += (CPR * 3)
+  R_Target += (CPR * 1)
+  L_Target += (CPR * 1)
   
   pwm_R = 0
   pwm_L = 0
