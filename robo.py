@@ -9,7 +9,6 @@ import tkinter
 rIdle             = 'idle'
 rClearFeedback    = 'clear feedback'
 rWaitCF           = 'wait clear feedback'
-rWaitCE           = 'wait clear encoder'
 rForward          = 'forward'
 rWaitForward      = 'wait forward'
 rFaceBackward     = 'face backward'
@@ -197,15 +196,18 @@ def rdata_button_press(data):
 def rdata_enc_feedback(data):
   global robo_state, last_left_enc, last_right_enc, PLeft, PRight, robo_vector_xy, robo_vector_pol
   global last_PLeft, last_PRight
+  global R_Target, L_Target
   global robo_orientation
   
   robo_left_enc = int.from_bytes(data[0:2], byteorder='big', signed=True)
   robo_right_enc = int.from_bytes(data[2:4], byteorder='big', signed=True)
-  if robo_state == rWaitCE:
+  if robo_state == rWaitCF:
     last_left_enc = robo_left_enc
     last_right_enc = robo_right_enc
     PLeft = 0
     PRight = 0
+    R_Target = 0
+    L_Target = 0
     last_PLeft = 0
     last_PRight = 0
     robo_vector_xy = [0, 0]
@@ -236,24 +238,6 @@ def rdata_enc_feedback(data):
 
   #print(f'polar r: {polar_r(PLeft, PRight)} deg: {radians_to_deg(polar_theta(PLeft, PRight))}')
   
-def rdata_travel_angle(data):
-  global robo_state, robo_travel, robo_angle
-  
-  robo_travel += int.from_bytes(data[0:2], byteorder='big', signed=True)
-  robo_angle  += int.from_bytes(data[2:4], byteorder='big', signed=True)
-
-  if robo_state == rWaitCF:
-    robo_travel = 0
-    robo_angle = 0
-    robo_state = rWaitCE
-  
-  if (robo_state != rIdle) and (robo_state != rCloseLoop):
-    #print(f'travel: {robo_travel} polar r: {robo_vector_pol[0]}    angle: {robo_angle} deg: {radians_to_deg(robo_vector_pol[1])}')
-    #print(f'travel: {robo_travel:.1f} x: {robo_vector_xy[0]:.1f}    angle: {robo_angle:.1f} theta: {radians_to_deg(robo_orientation):.1f}  y: {robo_vector_xy[1]:.1f}  PLeft: {PLeft}  PRight: {PRight}')
-    print(PLeft, PRight)
-  elif (robo_state != rCloseLoop):
-    print(PLeft, PRight, PRight - PLeft)
-
 
 
 
@@ -316,7 +300,8 @@ def act_on_data(data):
     if rdata_check(data[40]):             #packet 35 (oi mode)
       rdata_button_press(data[11])      #packet 18
       rdata_enc_feedback(data[52:56])   #packets 43 and 44
-      rdata_travel_angle(data[12:16])   #packets 19 and 20
+      #rdata_travel_angle(data[12:16])   #packets 19 and 20
+      update_info()
       data_request_time = time.time() + 0.088
     else:
       print(data[40])
@@ -391,8 +376,11 @@ def act_on_data(data):
         pwm_R = max(35, pwm_R - pwm_accel)
       
       error = error_function(PLeft, PRight)  
-      correction = (error * 0.16) - pwm_last_error
-      pwm_L = pwm_L + correction
+      correction = (error * 0.36) #- pwm_last_error
+      if C_Mode == cModeStraight:
+        pwm_L = pwm_R + correction
+      else:
+        pwm_L = -pwm_R + correction
       
       #if error > 0 and pwm_L < 20 and pwm_L > 0:
       #  pwm_L = 20
@@ -482,7 +470,6 @@ def robo_pwm(R, L):
   R = round(R)
   L = round(L)
   #print(f'pwm {R} {L} {PLeft} {PRight} {error_function(PLeft, PRight)} theta: {radians_to_deg(robo_orientation):.1f}')
-  print(f'pwm {R} {L} {PLeft} {PRight} {error_function(PLeft, PRight)} R_L_Offser: {R_L_Offset}')
   robo_send([146] + robo_num(R) + robo_num(L))
 
 
@@ -494,7 +481,6 @@ def _keypress(event):
 def robo_process():
   global robo_state
   global thread_run, init_feedback, key, keysdown, check_something_wrong
-  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L
   global robo_read_data
   
   data_request_time = time.time() + 3
@@ -542,21 +528,7 @@ def robo_process():
         keysdown = {}
       elif 'w' in keysdown:   #pwm straight
         robo_state = rIdle
-        #if C_Mode == cModeStraight:
-        #  C_Mode = cModeSpin
-        #  R_L_Offset = R_Target + L_Target
-        #  R_Target = R_Target + 815  #(CPR * 1.555)
-        #  L_Target -= 815
-        #else:
-        C_Mode = cModeStraight
-        R_L_Offset = R_Target - L_Target
-        R_Target += (CPR * 10)
-        L_Target += (CPR * 10)
-        #R_L_Offset = PRight - PLeft
-        
-        pwm_R = 0
-        pwm_L = 0
-        robo_state = rCloseLoop
+        btnGoClick()
         keysdown = {}
       elif 'i' in keysdown:   #show PLeft and PRight
         keysdown = {}
@@ -587,6 +559,61 @@ except:
   ser_port = False
   print('Robo not connected')
 
+def text(pos, color, contents, font='Helvetica', size=12, style='normal', anchor="nw", degrees=0):
+    global _canvas_x, _canvas_y
+    x, y = pos
+    font = (font, str(size), style)
+    return _canvas.create_text(x, y, fill=color, text=contents, font=font, anchor=anchor, angle=degrees)
+
+def formatColor(r, g, b):
+    return '#%02x%02x%02x' % (int(r * 255), int(g * 255), int(b * 255))
+
+def update_info():
+  _canvas.delete('all')
+  text((5, 10), formatColor(0, 0, 0), f'{robo_state}  {C_Mode}', font='Helvetica', size=8, style='normal', anchor="nw")
+  text((5, 25), formatColor(0, 0, 0), f'R: {PRight}  L: {PLeft}  Diff: {PRight - PLeft}', font='Helvetica', size=8, style='normal', anchor="nw")
+  text((5, 40), formatColor(0, 0, 0), f'pwm {pwm_R:.0f} {pwm_L:.0f} {error_function(PLeft, PRight)} R_L_Offset: {R_L_Offset}', font='Helvetica', size=8, style='normal', anchor="nw")
+
+  text((5, 60), formatColor(0, 0, 0), f'x,y,t {robo_vector_xy[0]:.1f} {robo_vector_xy[1]:.1f} {robo_orientation:.1f}', font='Helvetica', size=8, style='normal', anchor="nw")
+  
+  #_canvas.update()
+
+def btnStopClick():
+  global robo_state
+  
+  robo_state = rIdle
+  robo_drive(0, -1)        
+
+def btnGoClick():
+  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L
+  global robo_state
+  
+  R_L_Offset = PRight - PLeft - error_function(PLeft, PRight)
+  C_Mode = cModeStraight
+  R_Target += (CPR * 3)
+  L_Target += (CPR * 3)
+  
+  pwm_R = 0
+  pwm_L = 0
+  robo_state = rCloseLoop
+
+def btnSpinClick():
+  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L
+  global robo_state
+  
+  R_L_Offset = PRight + PLeft + error_function(PLeft, PRight)
+  C_Mode = cModeSpin
+  R_Target += 815
+  L_Target -= 815
+  
+  pwm_R = 0
+  pwm_L = 0
+  robo_state = rCloseLoop
+  
+def btnClearClick():
+  global robo_state
+  
+  robo_state = rClearFeedback
 
 #main routine
 #if connected to robot
@@ -606,9 +633,28 @@ if ser_port:
   # Create the root window
   _root_window = tkinter.Tk()
   #_root_window.protocol('WM_DELETE_WINDOW', _destroy_window)
+  _root_window.geometry('600x400')
   _root_window.title('iRobot')
   _root_window.resizable(0, 0)
   _root_window.bind( "<KeyPress>", _keypress )
+  _canvas = tkinter.Canvas(_root_window, width=400, height=400)
+  #_canvas.pack()
+  #_canvas.update()
+  _canvas.grid(row=0,column=0)
+
+  _frame = tkinter.Frame(_root_window)
+  _frame.grid(row=0,column=1, sticky="n")
+  
+  
+  btnStop = tkinter.Button(_frame, text="Stop", command=btnStopClick)
+  btnStop.grid(row=1, column=0, sticky="we")
+  btnGo = tkinter.Button(_frame, text="Go", command=btnGoClick)
+  btnGo.grid(row=2, column=0, sticky="we")
+  btnSpin = tkinter.Button(_frame, text="Spin", command=btnSpinClick)
+  btnSpin.grid(row=3, column=0, sticky="we")
+  btnClear = tkinter.Button(_frame, text="Clear", command=btnClearClick)
+  btnClear.grid(row=4, column=0, sticky="we")
+
   
   #open the OI
   robo_init()
@@ -618,12 +664,15 @@ if ser_port:
   init_feedback = 3
   
   _root_window.mainloop()
-
-  ser.flush()
+  
+  thread_run = False
+  
+  time.sleep(0.3)
   
   #close the OI
   robo_close()
 
+  ser.flush()
   ser.close()
 
 
