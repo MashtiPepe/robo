@@ -5,6 +5,7 @@ import threading
 import os
 import math
 import tkinter
+import numpy as np
 
 rIdle             = 'idle'
 rClearFeedback    = 'clear feedback'
@@ -18,6 +19,10 @@ rWaitGoBack       = 'wait go back'
 rFaceForward      = 'face forward'
 rWaitFaceForward  = 'wait face forward'
 rCloseLoop        = 'close loop'
+
+#world representation
+world_size = 500
+grid_world = np.zeros((world_size, world_size), dtype=np.uint8)
 
 robo_state = 'idle'
 #these two are calculated by the firmware
@@ -51,8 +56,13 @@ pwm_max = 90
 pwm_accel = 3
 pwm_last_error = 0
 
+bumper = [0] * 6
+bumper_arc = [None] * 6
+motor_current = [0] * 2
+
 cModeStraight = 'straight'
 cModeSpin     = 'spin'
+cModeBack     = 'back'
 R_L_Offset = 0
 R_Target = 0
 L_Target = 0
@@ -75,6 +85,8 @@ pi_rw = math.pi * rw
 pi_rw_div_CPR = pi_rw / CPR
 two_pi = math.pi * 2
 radian_in_pos = two_pi / 100
+
+radian_to_degrees = 180 / math.pi
 
 counts_180 = R * CPR / 2 / rw
 
@@ -199,8 +211,9 @@ def rdata_button_press(data):
 def rdata_enc_feedback(data):
   global robo_state, last_left_enc, last_right_enc, PLeft, PRight, robo_vector_xy, robo_vector_pol
   global last_PLeft, last_PRight
-  global R_Target, L_Target
+  global R_Target, L_Target, R_L_Offset
   global robo_orientation
+  global grid_world
   
   robo_left_enc = int.from_bytes(data[0:2], byteorder='big', signed=True)
   robo_right_enc = int.from_bytes(data[2:4], byteorder='big', signed=True)
@@ -211,11 +224,13 @@ def rdata_enc_feedback(data):
     PRight = 0
     R_Target = 0
     L_Target = 0
+    R_L_Offset = 0
     last_PLeft = 0
     last_PRight = 0
     robo_vector_xy = [0, 0]
     robo_vector_pol = [0, 0]
     robo_orientation = 0
+    grid_world[::] = 0
     print('INITIALIZE', robo_left_enc, robo_right_enc, robo_vector_xy[0], robo_vector_xy[1])
     robo_state = rIdle
   
@@ -239,7 +254,21 @@ def rdata_enc_feedback(data):
   
   robo_calc_pos(PLeft, PRight)
 
-  #print(f'polar r: {polar_r(PLeft, PRight)} deg: {radians_to_deg(polar_theta(PLeft, PRight))}')
+def rdata_bumpers(data):
+  global bumper
+  
+  bumper[0] = int.from_bytes(data[0:2], byteorder='big', signed=False)
+  bumper[1] = int.from_bytes(data[2:4], byteorder='big', signed=False)
+  bumper[2] = int.from_bytes(data[4:6], byteorder='big', signed=False)
+  bumper[3] = int.from_bytes(data[6:8], byteorder='big', signed=False)
+  bumper[4] = int.from_bytes(data[8:10], byteorder='big', signed=False)
+  bumper[5] = int.from_bytes(data[10:12], byteorder='big', signed=False)
+
+def rdata_motor_current(data):
+  global motor_current
+  
+  motor_current[0] = int.from_bytes(data[0:2], byteorder='big', signed=True)
+  motor_current[1] = int.from_bytes(data[2:4], byteorder='big', signed=True)
   
 
 
@@ -303,7 +332,8 @@ def act_on_data(data):
     if rdata_check(data[40]):             #packet 35 (oi mode)
       rdata_button_press(data[11])      #packet 18
       rdata_enc_feedback(data[52:56])   #packets 43 and 44
-      #rdata_travel_angle(data[12:16])   #packets 19 and 20
+      rdata_bumpers(data[57:69])
+      rdata_motor_current(data[71:75])
       update_info()
       data_request_time = time.time() + 0.088
     else:
@@ -362,25 +392,28 @@ def act_on_data(data):
       robo_state = rIdle
       
   if robo_state == rCloseLoop:
-    if PRight >= R_Target:
+    if abs(PRight - R_Target) < 5:
       print('out of close loop')
       robo_pwm(0, 0)
       #robo_drive(0, 0)
       robo_state = rIdle
     else:
       if abs(PRight - R_Target) < 300:
-        pwm_norm = 25
+        pwm_norm = 28
       else:
         pwm_norm = pwm_max * 0.6
         
+      if C_Mode == cModeBack:
+        pwm_norm *= -1
+        
       if pwm_R < pwm_norm:
-        pwm_R = max(25, pwm_R + pwm_accel)
+        pwm_R += pwm_accel
       elif pwm_R > pwm_norm:
-        pwm_R = max(25, pwm_R - pwm_accel)
+        pwm_R -= pwm_accel
       
       error = error_function(PLeft, PRight)  
       correction = (error * 0.36) #- pwm_last_error
-      if C_Mode == cModeStraight:
+      if C_Mode in {cModeStraight, cModeBack}:
         pwm_L = pwm_R + correction
       else:
         pwm_L = -pwm_R + correction
@@ -464,7 +497,7 @@ def robo_run():
     robo_state = rForward
     
 def error_function(PLeft, PRight):
-  if C_Mode == cModeStraight:
+  if C_Mode in {cModeStraight, cModeBack}:
     return PRight - PLeft - R_L_Offset
   else:
     return -(PRight + PLeft) + R_L_Offset
@@ -570,6 +603,41 @@ def text(pos, color, contents, font='Helvetica', size=12, style='normal', anchor
 
 def formatColor(r, g, b):
     return '#%02x%02x%02x' % (int(r * 255), int(g * 255), int(b * 255))
+    
+def draw_robo():
+  global grid_world
+  
+  map_x = (robo_vector_xy[0] // 10) + (world_size // 2)
+  map_y = (-robo_vector_xy[1] // 10) + (world_size // 2)
+  
+  map_x = max(min(map_x, world_size), 0)
+  map_y = max(min(map_y, world_size), 0)
+  
+  deg = robo_orientation * radian_to_degrees
+  
+  for i in range(6):
+    if bumper_arc[i] is not None:
+      _canvas_map.delete(bumper_arc[i])
+  
+  #print(map_x, map_y, deg)
+  try:
+    info = 1
+    for i in range(6):
+      if bumper[i] > 50:
+        info = 2
+        
+    grid_world[int(map_x)][int(map_y)] = info
+    _canvas_map.create_rectangle(map_x, map_y, map_x+1, map_y+1, fill = 'red')
+  except:
+    print('exception')
+    
+  
+  size = 40
+  for i in range(6):
+    if bumper[i] > 50:
+      bumper_arc[i] = _canvas_map.create_arc(map_x-size, map_y-size, map_x+size, map_y+size, start=deg-30+(i*10), extent=12, outline="red", style=tkinter.ARC, width=2)
+    else:
+      bumper_arc[i] = _canvas_map.create_arc(map_x-size, map_y-size, map_x+size, map_y+size, start=deg-30+(i*10), extent=12, outline="black", style=tkinter.ARC, width=2)
 
 def update_info():
   global update_info_time
@@ -580,8 +648,16 @@ def update_info():
     text((5, 25), formatColor(0, 0, 0), f'R: {PRight}->{R_Target:.0f}  L: {PLeft}  Diff: {PRight - PLeft}', font='Helvetica', size=8, style='normal', anchor="nw")
     text((5, 40), formatColor(0, 0, 0), f'pwm {pwm_R:.0f} {pwm_L:.0f} {error_function(PLeft, PRight)} R_L_Offset: {R_L_Offset}', font='Helvetica', size=8, style='normal', anchor="nw")
 
-    text((5, 60), formatColor(0, 0, 0), f'x,y,t {robo_vector_xy[0]:.1f} {robo_vector_xy[1]:.1f} {robo_orientation:.1f}', font='Helvetica', size=8, style='normal', anchor="nw")
+    text((5, 60), formatColor(0, 0, 0), f'x,y,t {robo_vector_xy[0]:.1f} {robo_vector_xy[1]:.1f} {robo_orientation*radian_to_degrees:.1f}', font='Helvetica', size=8, style='normal', anchor="nw")
     
+    for i in range(6):
+      text((5, 80+i*20), formatColor(0, 0, 0), f'bumper {i} {bumper[i]}', font='Helvetica', size=8, style='normal', anchor="nw")
+      
+    for i in range(2):
+      text((5, 200+i*20), formatColor(0, 0, 0), f'motor current {i} {motor_current[i]}', font='Helvetica', size=8, style='normal', anchor="nw")
+      
+    draw_robo()
+      
     update_info_time = time.time() + 0.5
   
     _canvas.update()
@@ -618,6 +694,19 @@ def btnSpinClick():
   pwm_L = 0
   robo_state = rCloseLoop
   
+def btnBackClick():
+  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L
+  global robo_state
+  
+  R_L_Offset = PRight - PLeft - error_function(PLeft, PRight)
+  C_Mode = cModeBack
+  R_Target -= (CPR * 3)
+  L_Target -= (CPR * 3)
+  
+  pwm_R = 0
+  pwm_L = 0
+  robo_state = rCloseLoop
+
 def btnClearClick():
   global robo_state
   
@@ -641,14 +730,14 @@ if ser_port:
   # Create the root window
   _root_window = tkinter.Tk()
   #_root_window.protocol('WM_DELETE_WINDOW', _destroy_window)
-  _root_window.geometry('600x400')
+  _root_window.geometry('500x900')
   _root_window.title('iRobot')
   _root_window.resizable(0, 0)
   _root_window.bind( "<KeyPress>", _keypress )
   _canvas = tkinter.Canvas(_root_window, width=400, height=400)
-  #_canvas.pack()
-  #_canvas.update()
   _canvas.grid(row=0,column=0)
+  _canvas_map = tkinter.Canvas(_root_window, width=world_size, height=world_size)
+  _canvas_map.grid(row=1,column=0, columnspan=2)
 
   _frame = tkinter.Frame(_root_window)
   _frame.grid(row=0,column=1, sticky="n")
@@ -660,8 +749,10 @@ if ser_port:
   btnGo.grid(row=2, column=0, sticky="we")
   btnSpin = tkinter.Button(_frame, text="Spin", command=btnSpinClick)
   btnSpin.grid(row=3, column=0, sticky="we")
+  btnBack = tkinter.Button(_frame, text="Backup", command=btnBackClick)
+  btnBack.grid(row=4, column=0, sticky="we")
   btnClear = tkinter.Button(_frame, text="Clear", command=btnClearClick)
-  btnClear.grid(row=4, column=0, sticky="we")
+  btnClear.grid(row=5, column=0, sticky="we")
 
   
   #open the OI
