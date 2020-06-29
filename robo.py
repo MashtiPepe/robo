@@ -744,8 +744,8 @@ def btnBackClick():
   
   R_L_Offset = PRight - PLeft - error_function(PLeft, PRight)
   C_Mode = cModeBack
-  R_Target = PRight - (CPR * 3)
-  L_Target = PLeft - (CPR * 3)
+  R_Target = PRight - (CPR * 1)
+  L_Target = PLeft - (CPR * 1)
   
   pwm_R = 0
   pwm_L = 0
