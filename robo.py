@@ -42,6 +42,7 @@ robo_stream_enabled = False
 robo_stream_mode = True
 robo_read_data = False
 data_request_time = 0
+update_info_time = 0
 
 pwm_R = 0
 pwm_L = 0
@@ -66,14 +67,16 @@ C_Mode = cModeStraight
 # r (travel distance mm) = (PLeft + PRight) / 2   * (2 pi rw) / CPR
 # theta (orientation range 0 to 2 pi) = (PRight - PRight) / (D / 2)
 #
-rw = 36
-CPR = 508.5
-D = 252   #217 inside dim, 232 center dim, 247 outside dim
+rw = 35
+CPR = 508.86
+D = 232   #217 inside dim, 232 center dim, 247 outside dim
 R = D/2
 pi_rw = math.pi * rw
 pi_rw_div_CPR = pi_rw / CPR
 two_pi = math.pi * 2
 radian_in_pos = two_pi / 100
+
+counts_180 = R * CPR / 2 / rw
 
 
 # travel in mm
@@ -88,7 +91,7 @@ def polar_theta(PLeft, PRight):
   global robo_orientation
   
   # (PRight - PLeft) / R
-  theta = (PRight - PLeft) / R / 4
+  theta = (PRight - PLeft) / 2 / counts_180 * math.pi
     
   
   while theta > two_pi:
@@ -365,15 +368,15 @@ def act_on_data(data):
       #robo_drive(0, 0)
       robo_state = rIdle
     else:
-      if abs(PRight - R_Target) < 600:
+      if abs(PRight - R_Target) < 300:
         pwm_norm = 25
       else:
         pwm_norm = pwm_max * 0.6
         
       if pwm_R < pwm_norm:
-        pwm_R = max(35, pwm_R + pwm_accel)
+        pwm_R = max(25, pwm_R + pwm_accel)
       elif pwm_R > pwm_norm:
-        pwm_R = max(35, pwm_R - pwm_accel)
+        pwm_R = max(25, pwm_R - pwm_accel)
       
       error = error_function(PLeft, PRight)  
       correction = (error * 0.36) #- pwm_last_error
@@ -569,14 +572,19 @@ def formatColor(r, g, b):
     return '#%02x%02x%02x' % (int(r * 255), int(g * 255), int(b * 255))
 
 def update_info():
-  _canvas.delete('all')
-  text((5, 10), formatColor(0, 0, 0), f'{robo_state}  {C_Mode}', font='Helvetica', size=8, style='normal', anchor="nw")
-  text((5, 25), formatColor(0, 0, 0), f'R: {PRight}  L: {PLeft}  Diff: {PRight - PLeft}', font='Helvetica', size=8, style='normal', anchor="nw")
-  text((5, 40), formatColor(0, 0, 0), f'pwm {pwm_R:.0f} {pwm_L:.0f} {error_function(PLeft, PRight)} R_L_Offset: {R_L_Offset}', font='Helvetica', size=8, style='normal', anchor="nw")
-
-  text((5, 60), formatColor(0, 0, 0), f'x,y,t {robo_vector_xy[0]:.1f} {robo_vector_xy[1]:.1f} {robo_orientation:.1f}', font='Helvetica', size=8, style='normal', anchor="nw")
+  global update_info_time
   
-  #_canvas.update()
+  if time.time() > update_info_time:
+    _canvas.delete('all')
+    text((5, 10), formatColor(0, 0, 0), f'{robo_state}  {C_Mode}', font='Helvetica', size=8, style='normal', anchor="nw")
+    text((5, 25), formatColor(0, 0, 0), f'R: {PRight}->{R_Target:.0f}  L: {PLeft}  Diff: {PRight - PLeft}', font='Helvetica', size=8, style='normal', anchor="nw")
+    text((5, 40), formatColor(0, 0, 0), f'pwm {pwm_R:.0f} {pwm_L:.0f} {error_function(PLeft, PRight)} R_L_Offset: {R_L_Offset}', font='Helvetica', size=8, style='normal', anchor="nw")
+
+    text((5, 60), formatColor(0, 0, 0), f'x,y,t {robo_vector_xy[0]:.1f} {robo_vector_xy[1]:.1f} {robo_orientation:.1f}', font='Helvetica', size=8, style='normal', anchor="nw")
+    
+    update_info_time = time.time() + 0.5
+  
+    _canvas.update()
 
 def btnStopClick():
   global robo_state
@@ -603,8 +611,8 @@ def btnSpinClick():
   
   R_L_Offset = PRight + PLeft + error_function(PLeft, PRight)
   C_Mode = cModeSpin
-  R_Target += 815
-  L_Target -= 815
+  R_Target += counts_180  #815
+  L_Target -= counts_180  #815
   
   pwm_R = 0
   pwm_L = 0
