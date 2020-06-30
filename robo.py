@@ -104,7 +104,8 @@ radian_to_degrees = 180 / math.pi
 #counts_180 = this is 843   R * CPR / 2 / rw
 #counts_180 = 815
 #counts_180 = 825
-counts_180 = 791
+counts_180 = 791   # the closest yet.
+counts_180 = 789
 
 counts_limit = world_size * 10 * CPR_div_2_pi_rw
 
@@ -795,27 +796,20 @@ def update_info():
   global update_info_time
   
   if time.time() > update_info_time:
-    _canvas.delete('all')
-    text((5, 10), formatColor(0, 0, 0), f'{robo_state}  {C_Mode}  {explore_actions}', font='Helvetica', size=8, style='normal', anchor="nw")
-    text((5, 25), formatColor(0, 0, 0), f'R: {PRight}->{R_Target:.0f}  L: {PLeft}  Diff: {PRight - PLeft}', font='Helvetica', size=8, style='normal', anchor="nw")
-    text((5, 40), formatColor(0, 0, 0), f'pwm {pwm_R:.0f} {pwm_L:.0f} {error_function(PLeft, PRight)} R_L_Offset: {R_L_Offset}', font='Helvetica', size=8, style='normal', anchor="nw")
+    info_status.set(f'{robo_state}  {C_Mode}  {explore_actions}')
+    info_position.set(f'R: {PRight}->{R_Target:.0f}  L: {PLeft}  Diff: {PRight - PLeft}')
+    info_pwm.set(f'pwm {pwm_R:.0f} {pwm_L:.0f} {error_function(PLeft, PRight)} R_L_Offset: {R_L_Offset}')
+    info_xy.set(f'x,y,t {robo_vector_xy[0]:.1f} {robo_vector_xy[1]:.1f} {robo_orientation*radian_to_degrees:.1f} \n')
+    info_bumper.set(f'bumper 0 {bumper[0]} \n bumper 1 {bumper[1]} \n bumper 2 {bumper[2]} \n bumper 3 {bumper[3]} \n bumper 4 {bumper[4]} \n bumper 5 {bumper[5]}')
+    info_current.set(f'motor current 0 {motor_current[0]} \n motor current 1 {motor_current[1]} ')
+    info_cliff.set(f'cliff 0 {cliff[0]} \n cliff 1 {cliff[1]} \n cliff 2 {cliff[2]} \n cliff 3 {cliff[3]} ')
 
-    text((5, 60), formatColor(0, 0, 0), f'x,y,t {robo_vector_xy[0]:.1f} {robo_vector_xy[1]:.1f} {robo_orientation*radian_to_degrees:.1f}', font='Helvetica', size=8, style='normal', anchor="nw")
-    
-    for i in range(6):
-      text((5, 80+i*20), formatColor(0, 0, 0), f'bumper {i} {bumper[i]}', font='Helvetica', size=8, style='normal', anchor="nw")
-      
-    for i in range(2):
-      text((5, 200+i*20), formatColor(0, 0, 0), f'motor current {i} {motor_current[i]}', font='Helvetica', size=8, style='normal', anchor="nw")
-      
-    for i in range(4):
-      text((5, 240+i*20), formatColor(0, 0, 0), f'cliff {i} {cliff[i]}', font='Helvetica', size=8, style='normal', anchor="nw")
-      
+           
     draw_robo()
       
     update_info_time = time.time() + 0.75
   
-    _canvas.update()
+    #_canvas.update()
 
 def btnStopClick():
   global robo_state, robo_explore, explore_options
@@ -907,31 +901,58 @@ if ser_port:
   # Create the root window
   _root_window = tkinter.Tk()
   #_root_window.protocol('WM_DELETE_WINDOW', _destroy_window)
-  _root_window.geometry('500x900')
+  _root_window.geometry('505x900')
   _root_window.title('iRobot')
-  _root_window.resizable(0, 0)
+  _root_window.resizable(1, 1)
   _root_window.bind( "<KeyPress>", _keypress )
-  _canvas = tkinter.Canvas(_root_window, width=400, height=400)
-  _canvas.grid(row=0,column=0)
-  _canvas_map = tkinter.Canvas(_root_window, width=world_size, height=world_size)
-  _canvas_map.grid(row=1,column=0, columnspan=2)
+  #_canvas = tkinter.Canvas(_root_window, width=400, height=400)
+  #_canvas.grid(row=0,column=0)
+  _frame_left = tkinter.Frame(_root_window, width=300)
+  _frame_left.grid(row=0, column=0)
 
-  _frame = tkinter.Frame(_root_window)
-  _frame.grid(row=0,column=1, sticky="n")
+  _frame_right = tkinter.Frame(_root_window, width=200)
+  _frame_right.grid(row=0,column=1)
   
+  _canvas_map = tkinter.Canvas(_root_window, width=world_size, height=world_size, bg="gray")
+  _canvas_map.grid(row=1, column=0, columnspan=2)
+
+  btnStop = tkinter.Button(_frame_right, text="Stop", command=btnStopClick)
+  btnGo = tkinter.Button(_frame_right, text="Go", command=btnGoClick)
+  btnSpin = tkinter.Button(_frame_right, text="Spin", command=btnSpinClick)
+  btnBack = tkinter.Button(_frame_right, text="Backup", command=btnBackClick)
+  btnExplore = tkinter.Button(_frame_right, text="Explore", command=btnExploreClick)
+  btnClear = tkinter.Button(_frame_right, text="Clear", command=btnClearClick)
   
-  btnStop = tkinter.Button(_frame, text="Stop", command=btnStopClick)
-  btnStop.grid(row=1, column=0, sticky="we")
-  btnGo = tkinter.Button(_frame, text="Go", command=btnGoClick)
-  btnGo.grid(row=2, column=0, sticky="we")
-  btnSpin = tkinter.Button(_frame, text="Spin", command=btnSpinClick)
-  btnSpin.grid(row=3, column=0, sticky="we")
-  btnBack = tkinter.Button(_frame, text="Backup", command=btnBackClick)
-  btnBack.grid(row=4, column=0, sticky="we")
-  btnExplore = tkinter.Button(_frame, text="Explore", command=btnExploreClick)
-  btnExplore.grid(row=5, column=0, sticky="we")
-  btnClear = tkinter.Button(_frame, text="Clear", command=btnClearClick)
-  btnClear.grid(row=6, column=0, sticky="we")
+  btnStop.grid(row=0, column=0, sticky="we")
+  btnGo.grid(row=1, column=0, sticky="we")
+  btnSpin.grid(row=2, column=0, sticky="we")
+  btnBack.grid(row=3, column=0, sticky="we")
+  btnExplore.grid(row=4, column=0, sticky="we")
+  btnClear.grid(row=5, column=0, sticky="we")
+  
+  info_status = tkinter.StringVar(_frame_left)
+  info_position = tkinter.StringVar(_frame_left)
+  info_pwm = tkinter.StringVar(_frame_left)
+  info_xy = tkinter.StringVar(_frame_left)
+  info_bumper = tkinter.StringVar(_frame_left)
+  info_current = tkinter.StringVar(_frame_left)
+  info_cliff = tkinter.StringVar(_frame_left)
+  
+  lblStatus = tkinter.Label(_frame_left, textvariable=info_status, justify="left", width=35)
+  lblPosition = tkinter.Label(_frame_left, textvariable=info_position, justify="left", width=35)
+  lblPWM = tkinter.Label(_frame_left, textvariable=info_pwm, justify="left", width=35)
+  lblXY = tkinter.Label(_frame_left, textvariable=info_xy, justify="left", width=35)
+  lblBumper = tkinter.Label(_frame_left, textvariable=info_bumper, justify="left", width=35)
+  lblCurrent = tkinter.Label(_frame_left, textvariable=info_current, justify="left", width=35)
+  lblCliff = tkinter.Label(_frame_left, textvariable=info_cliff, justify="left", width=35)
+  
+  lblStatus.grid(row=0, column=0)
+  lblPosition.grid(row=1, column=0)
+  lblPWM.grid(row=2, column=0)
+  lblXY.grid(row=3, column=0)
+  lblBumper.grid(row=4, column=0)
+  lblCurrent.grid(row=5, column=0)
+  lblCliff.grid(row=6, column=0)
 
   
   #open the OI
@@ -940,6 +961,7 @@ if ser_port:
   robo_full_control()
   robo_request_time = time.time() + 3
   init_feedback = 3
+  
   
   _root_window.mainloop()
   
