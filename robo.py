@@ -53,6 +53,7 @@ robo_stream_mode = True
 robo_read_data = False
 data_request_time = 0
 update_info_time = 0
+robo_button_press_time = 0
 
 pwm_R = 0
 pwm_L = 0
@@ -206,7 +207,10 @@ def rdata_check(data):
     return True
     
 def rdata_button_press(data):
-  global key, robo_state, robo_explore
+  global key, robo_state, robo_explore, robo_button_press_time
+  
+  if time.time() < robo_button_press_time:
+    return
   
   if data & 1 > 0:    #clean button
     if not robo_explore:
@@ -220,6 +224,9 @@ def rdata_button_press(data):
     robo_explore = False
     btnStopClick()
     btnClearClick()
+    
+  if data > 0:
+    robo_button_press_time = time.time() + 1.5
     
 def robo_safety():
   global explore_actions, robo_draw_info, robo_draw_color
@@ -240,8 +247,8 @@ def robo_safety():
       robo_draw_info = 3
       robo_draw_color = 'lime'
       if len(explore_actions) == 0 and robo_explore:
-        pwm_L = -35
-        pwm_R = -35
+        pwm_L = -105
+        pwm_R = -105
         explore_actions += [cModeSpin]
         btnBackClick()
         robo_sing()
