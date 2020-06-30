@@ -71,6 +71,7 @@ motor_current = [0] * 2
 cModeStraight = 'straight'
 cModeSpin     = 'spin'
 cModeBack     = 'back'
+cModeDummy    = 'dummy'
 R_L_Offset = 0
 R_Target = 0
 L_Target = 0
@@ -241,7 +242,7 @@ def robo_safety():
       robo_draw_info = 2
       robo_draw_color = 'red'
       if len(explore_actions) == 0 and robo_explore:
-        explore_actions += [cModeSpin]
+        explore_actions += [cModeSpin, cModeDummy]
         btnBackClick()
   
   #check the cliff light strength
@@ -252,7 +253,7 @@ def robo_safety():
       if len(explore_actions) == 0 and robo_explore:
         pwm_L = -250
         pwm_R = -250
-        explore_actions += [cModeSpin]
+        explore_actions += [cModeSpin, cModeDummy]
         btnBackClick()
         robo_sing()
         
@@ -262,7 +263,7 @@ def robo_safety():
       robo_draw_info = 2
       robo_draw_color = 'red'
       if len(explore_actions) == 0 and robo_explore:
-        explore_actions += [cModeSpin]
+        explore_actions += [cModeSpin, cModeDummy]
         btnBackClick()
 
 def rdata_enc_feedback(data):
@@ -690,19 +691,19 @@ def draw_robo():
   
   if robo_explore:
     if map_x > world_size and len(explore_actions) == 0:
-      explore_actions += [cModeSpin]
+      explore_actions += [cModeSpin, cModeDummy]
       btnBackClick()
 
     if map_x < 0 and len(explore_actions) == 0:
-      explore_actions += [cModeSpin]
+      explore_actions += [cModeSpin, cModeDummy]
       btnBackClick()
   
     if map_y > world_size and len(explore_actions) == 0:
-      explore_actions += [cModeSpin]
+      explore_actions += [cModeSpin, cModeDummy]
       btnBackClick()
 
     if map_y < 0 and len(explore_actions) == 0:
-      explore_actions += [cModeSpin]
+      explore_actions += [cModeSpin, cModeDummy]
       btnBackClick()
       
     if len(explore_actions) > 0:
@@ -713,6 +714,8 @@ def draw_robo():
         elif explore_actions[0] == cModeSpin:
           explore_actions.pop(0)
           btnSpinClick()
+        elif explore_actions[0] == cModeDummy:
+          explore_actions.pop(0)
     elif robo_state == rIdle:
       btnExploreClick()
   
