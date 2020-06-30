@@ -104,8 +104,7 @@ radian_to_degrees = 180 / math.pi
 #counts_180 = this is 843   R * CPR / 2 / rw
 #counts_180 = 815
 #counts_180 = 825
-#counts_180 = 791   # the closest yet.
-counts_180 = 795
+counts_180 = 791   # the closest yet.
 
 counts_limit = world_size * 10 * CPR_div_2_pi_rw
 
@@ -794,9 +793,9 @@ def update_info():
     info_position.set(f'R: {PRight}->{R_Target:.0f}  L: {PLeft}  Diff: {PRight - PLeft}')
     info_pwm.set(f'pwm {pwm_R:.0f} {pwm_L:.0f} {error_function(PLeft, PRight)} R_L_Offset: {R_L_Offset}')
     info_xy.set(f'x,y,t {robo_vector_xy[0]:.1f} {robo_vector_xy[1]:.1f} {robo_orientation*radian_to_degrees:.1f} \n')
-    info_bumper.set(f'bumper 0 {bumper[0]} \n bumper 1 {bumper[1]} \n bumper 2 {bumper[2]} \n bumper 3 {bumper[3]} \n bumper 4 {bumper[4]} \n bumper 5 {bumper[5]}')
-    info_current.set(f'motor current 0 {motor_current[0]} \n motor current 1 {motor_current[1]} ')
-    info_cliff.set(f'cliff 0 {cliff[0]} \n cliff 1 {cliff[1]} \n cliff 2 {cliff[2]} \n cliff 3 {cliff[3]} ')
+    info_bumper.set(f' bumper 0 {bumper[0]} \n bumper 1 {bumper[1]} \n bumper 2 {bumper[2]} \n bumper 3 {bumper[3]} \n bumper 4 {bumper[4]} \n bumper 5 {bumper[5]}')
+    info_current.set(f' motor current 0 {motor_current[0]} \n motor current 1 {motor_current[1]} ')
+    info_cliff.set(f' cliff 0 {cliff[0]} \n cliff 1 {cliff[1]} \n cliff 2 {cliff[2]} \n cliff 3 {cliff[3]} ')
 
            
     draw_robo()
