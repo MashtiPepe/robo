@@ -230,6 +230,7 @@ def rdata_button_press(data):
     
 def robo_safety():
   global explore_actions, robo_draw_info, robo_draw_color
+  global pwm_L, pwm_R
   
   #check the bumper light strength
   for i in range(6):
@@ -243,7 +244,7 @@ def robo_safety():
   
   #check the cliff light strength
   for i in range(4):
-    if cliff[i] < 1700:
+    if cliff[i] < 1400:
       robo_draw_info = 3
       robo_draw_color = 'lime'
       if len(explore_actions) == 0 and robo_explore:
