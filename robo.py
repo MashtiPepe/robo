@@ -319,16 +319,6 @@ def rdata_enc_feedback(data):
   elif change_right < -32768:
     change_right += 65535
     
-  if pwm_L < 0:
-    change_left = -abs(change_left)
-  else:
-    change_left = abs(change_left)
-    
-  if pwm_R < 0:
-    change_right = -abs(change_right)
-  else:
-    change_right = abs(change_right)
-    
   PLeft += change_left
   PRight += change_right
   
