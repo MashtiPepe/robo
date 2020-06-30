@@ -209,10 +209,7 @@ def rdata_button_press(data):
   global key, robo_state, robo_explore
   
   if data & 1 > 0:    #clean button
-    robo_explore = not robo_explore
     if not robo_explore:
-      btnStopClick()
-    else:
       btnExploreClick()
   #elif data & 2 > 0:  #spot button
   #  key = 's'
