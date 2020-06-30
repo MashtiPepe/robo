@@ -689,7 +689,7 @@ def draw_robo():
     
     #check the cliff light strength
     for i in range(4):
-      if cliff[i] < 500:
+      if cliff[i] < 1500:
         info = 3
         o_color = 'lime'
         if len(explore_actions) == 0 and robo_explore:
