@@ -104,7 +104,7 @@ radian_to_degrees = 180 / math.pi
 #counts_180 = this is 843   R * CPR / 2 / rw
 #counts_180 = 815
 #counts_180 = 825
-counts_180 = 817
+counts_180 = 791
 
 counts_limit = world_size * 10 * CPR_div_2_pi_rw
 
