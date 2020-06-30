@@ -352,7 +352,7 @@ def robo_read():
     
     if robo_read_data:
       if robo_stream_enabled and robo_stream_mode:
-        data = ser.read(7 * 84)
+        data = ser.read(9 * 84)
         offset = 0
         for i in range(len(data)):
           if data[i] == 19:
