@@ -685,16 +685,16 @@ def check_stuck():
   if time.time() > check_stuck_time:
     
     if robo_state != rIdle:
-      if (abs(old_pleft - PLeft) < 5) and ((pwm_L > 35) or (pwm_L < -35)):
+      if (abs(old_pleft - PLeft) < 5) and ((pwm_L > 5) or (pwm_L < -5)):
         res = True
         print('left wheel stuck', PLeft, old_pleft, pwm_L)
-      if (abs(old_pright - PRight) < 5) and ((pwm_R > 35) or (pwm_R < -35)):
+      if (abs(old_pright - PRight) < 5) and ((pwm_R > 5) or (pwm_R < -5)):
         res = True
         print('right wheel stuck', PRight, old_pright, pwm_R)
         
     old_pleft = PLeft
     old_pright = PRight
-    check_stuck_time = time.time() + 1
+    check_stuck_time = time.time() + 1.3
 
   return res
     
