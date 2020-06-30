@@ -212,6 +212,8 @@ def rdata_button_press(data):
     robo_explore = not robo_explore
     if not robo_explore:
       btnStopClick()
+    else:
+      btnExploreClick()
   #elif data & 2 > 0:  #spot button
   #  key = 's'
   elif data & 4 > 0:  #dock button
