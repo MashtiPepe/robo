@@ -205,7 +205,7 @@ def rdata_check(data):
     return True
     
 def rdata_button_press(data):
-  global key, robo_state
+  global key, robo_state, robo_explore
   
   if data & 1 > 0:    #clean button
     robo_explore = not robo_explore
