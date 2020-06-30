@@ -716,12 +716,6 @@ except:
   ser_port = False
   print('Robo not connected')
 
-def text(pos, color, contents, font='Helvetica', size=12, style='normal', anchor="nw", degrees=0):
-    global _canvas_x, _canvas_y
-    x, y = pos
-    font = (font, str(size), style)
-    return _canvas.create_text(x, y, fill=color, text=contents, font=font, anchor=anchor, angle=degrees)
-
 def formatColor(r, g, b):
     return '#%02x%02x%02x' % (int(r * 255), int(g * 255), int(b * 255))
     
@@ -913,7 +907,7 @@ if ser_port:
   _frame_right = tkinter.Frame(_root_window, width=200)
   _frame_right.grid(row=0,column=1)
   
-  _canvas_map = tkinter.Canvas(_root_window, width=world_size, height=world_size, bg="gray")
+  _canvas_map = tkinter.Canvas(_root_window, width=world_size, height=world_size, bg="light gray")
   _canvas_map.grid(row=1, column=0, columnspan=2)
 
   btnStop = tkinter.Button(_frame_right, text="Stop", command=btnStopClick)
