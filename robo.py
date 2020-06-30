@@ -473,7 +473,7 @@ def act_on_data(data):
         pwm_norm = pwm_max * 0.6
         
       if C_Mode == cModeBack:
-        pwm_norm *= -1
+        pwm_norm *= -1.3
         
       if pwm_R < pwm_norm:
         pwm_R += pwm_accel
