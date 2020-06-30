@@ -39,6 +39,8 @@ robo_vector_xy = [0, 0]
 robo_orientation = 0
 last_PLeft = 0
 last_PRight = 0
+old_pleft = 0
+old_pright = 0
 last_left_enc = 0
 last_right_enc = 0
 PLeft = 0
@@ -54,6 +56,7 @@ robo_read_data = False
 data_request_time = 0
 update_info_time = 0
 robo_button_press_time = 0
+check_stuck_time = 0
 
 pwm_R = 0
 pwm_L = 0
@@ -265,10 +268,16 @@ def robo_safety():
       if len(explore_actions) == 0 and robo_explore:
         explore_actions += [cModeSpin, cModeDummy]
         btnBackClick()
+        
+  if check_stuck():
+    if len(explore_actions) == 0 and robo_explore:
+      explore_actions += [cModeSpin, cModeDummy]
+      btnBackClick()
 
 def rdata_enc_feedback(data):
   global robo_state, last_left_enc, last_right_enc, PLeft, PRight, robo_vector_xy, robo_vector_pol
   global last_PLeft, last_PRight
+  global old_pleft, old_pright
   global R_Target, L_Target, R_L_Offset
   global robo_orientation
   global grid_world, robo_explore, explore_actions
@@ -285,6 +294,8 @@ def rdata_enc_feedback(data):
     R_L_Offset = 0
     last_PLeft = 0
     last_PRight = 0
+    old_pleft = 0
+    old_pright = 0
     robo_vector_xy = [0, 0]
     robo_vector_pol = [0, 0]
     robo_orientation = 0
@@ -658,6 +669,37 @@ def robo_process():
   
   except KeyboardInterrupt:
     pass
+    
+def reset_check_stuck():
+  global old_pleft, old_pright, check_stuck_time
+  
+  check_stuck_time = time.time() + 1
+  
+  old_pleft = PLeft + 1000
+  old_pright = PRight + 1000
+
+def check_stuck():
+  global old_pleft, old_pright, check_stuck_time
+  
+  res = False
+  if time.time() > check_stuck_time:
+    
+    if robo_state != rIdle:
+      if (abs(old_pleft - PLeft) < 5) and ((pwm_L > 35) or (pwm_L < -35)):
+        res = True
+        print('left wheel stuck', PLeft, old_pleft, pwm_L)
+      if (abs(old_pright - PRight) < 5) and ((pwm_R > 35) or (pwm_R < -35)):
+        res = True
+        print('right wheel stuck', PRight, old_pright, pwm_R)
+        
+    old_pleft = PLeft
+    old_pright = PRight
+    check_stuck_time = time.time() + 1
+
+  return res
+    
+  
+
   
 try:
   print(os.name)
@@ -685,6 +727,7 @@ def formatColor(r, g, b):
 def draw_robo():
   global grid_world, explore_actions
   global robo_draw_color, robo_draw_info
+  global old_pleft, old_pright
   
   map_x = (robo_vector_xy[0] // 10) + half_world
   map_y = (-robo_vector_xy[1] // 10) + half_world
@@ -793,6 +836,7 @@ def btnGoClick():
   
   pwm_R = 0
   pwm_L = 0
+  reset_check_stuck()
   robo_state = rCloseLoop
 
 def btnSpinClick():
@@ -806,6 +850,7 @@ def btnSpinClick():
   
   pwm_R = 0
   pwm_L = 0
+  reset_check_stuck()
   robo_state = rCloseLoop
   
 def btnBackClick():
@@ -820,6 +865,7 @@ def btnBackClick():
   if (pwm_R > 0):
     pwm_R = 0
     pwm_L = 0
+  reset_check_stuck()
   robo_state = rCloseLoop
 
 def btnExploreClick():
@@ -833,6 +879,7 @@ def btnExploreClick():
   
   pwm_R = 0
   pwm_L = 0
+  reset_check_stuck()
   robo_state = rCloseLoop
   explore_actions = []
   robo_explore = True
