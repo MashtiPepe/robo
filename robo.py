@@ -90,7 +90,7 @@ C_Mode = cModeStraight
 # theta (orientation range 0 to 2 pi) = (PRight - PRight) / (D / 2)
 #
 rw = 35
-CPR = 508.86
+CPR = 486.78   #508.86
 D = 232   #217 inside dim, 232 center dim, 247 outside dim
 R = D/2
 pi_rw = math.pi * rw
@@ -104,8 +104,8 @@ radian_to_degrees = 180 / math.pi
 #counts_180 = this is 843   R * CPR / 2 / rw
 #counts_180 = 815
 #counts_180 = 825
-counts_180 = 791   # the closest yet.
-counts_180 = 792
+#counts_180 = 791   # the closest yet.
+counts_180 = 795
 
 counts_limit = world_size * 10 * CPR_div_2_pi_rw
 
