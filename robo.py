@@ -192,6 +192,7 @@ def rdata_check(data):
       print('------------ SOMETHING WRONG')
       data_request_time = time.time() + 10
       robo_state = rIdle
+      robo_explore = False
       robo_close()
       time.sleep(1)
       robo_init()
@@ -209,13 +210,17 @@ def rdata_button_press(data):
   
   if data & 1 > 0:    #clean button
     robo_explore = not robo_explore
-  elif data & 2 > 0:  #spot button
-    key = 's'
+    if not robo_explore:
+      btnStopClick()
+  #elif data & 2 > 0:  #spot button
+  #  key = 's'
   elif data & 4 > 0:  #dock button
-    key = 'p'
     print ('******************  STOP')
+    btnStopClick()
   elif data & 64 > 0:    #schedule button
-    robo_state = rClearFeedback
+    robo_explore = False
+    btnStopClick()
+    btnClearClick()
     
 def robo_safety():
   global explore_actions, robo_draw_info, robo_draw_color
@@ -228,15 +233,17 @@ def robo_safety():
       if len(explore_actions) == 0 and robo_explore:
         explore_actions += [cModeSpin]
         btnBackClick()
+        robo_sing()
   
   #check the cliff light strength
   for i in range(4):
-    if cliff[i] < 1500:
+    if cliff[i] < 1000:
       robo_draw_info = 3
       robo_draw_color = 'lime'
       if len(explore_actions) == 0 and robo_explore:
         explore_actions += [cModeSpin]
         btnBackClick()
+        robo_sing()
         
   #check the crash bumps
   for i in range(2):
@@ -246,6 +253,7 @@ def robo_safety():
       if len(explore_actions) == 0 and robo_explore:
         explore_actions += [cModeSpin]
         btnBackClick()
+        robo_sing()
 
 def rdata_enc_feedback(data):
   global robo_state, last_left_enc, last_right_enc, PLeft, PRight, robo_vector_xy, robo_vector_pol
