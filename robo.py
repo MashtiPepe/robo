@@ -240,7 +240,6 @@ def robo_safety():
       if len(explore_actions) == 0 and robo_explore:
         explore_actions += [cModeSpin]
         btnBackClick()
-        robo_sing()
   
   #check the cliff light strength
   for i in range(4):
@@ -248,8 +247,8 @@ def robo_safety():
       robo_draw_info = 3
       robo_draw_color = 'lime'
       if len(explore_actions) == 0 and robo_explore:
-        pwm_L = -105
-        pwm_R = -105
+        pwm_L = -155
+        pwm_R = -155
         explore_actions += [cModeSpin]
         btnBackClick()
         robo_sing()
@@ -262,7 +261,6 @@ def robo_safety():
       if len(explore_actions) == 0 and robo_explore:
         explore_actions += [cModeSpin]
         btnBackClick()
-        robo_sing()
 
 def rdata_enc_feedback(data):
   global robo_state, last_left_enc, last_right_enc, PLeft, PRight, robo_vector_xy, robo_vector_pol
