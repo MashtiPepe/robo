@@ -24,6 +24,8 @@ rCloseLoop        = 'close loop'
 world_size = 500
 half_world = world_size // 2
 grid_world = np.zeros((world_size, world_size), dtype=np.uint8)
+robo_draw_info = 1
+robo_draw_color = 'black'
 
 robo_explore = False
 explore_actions = []
@@ -206,7 +208,7 @@ def rdata_button_press(data):
   global key, robo_state
   
   if data & 1 > 0:    #clean button
-    key = 'b'
+    robo_explore = not robo_explore
   elif data & 2 > 0:  #spot button
     key = 's'
   elif data & 4 > 0:  #dock button
@@ -214,6 +216,36 @@ def rdata_button_press(data):
     print ('******************  STOP')
   elif data & 64 > 0:    #schedule button
     robo_state = rClearFeedback
+    
+def robo_safety():
+  global explore_actions, robo_draw_info, robo_draw_color
+  
+  #check the bumper light strength
+  for i in range(6):
+    if bumper[i] > 50:
+      robo_draw_info = 2
+      robo_draw_color = 'red'
+      if len(explore_actions) == 0 and robo_explore:
+        explore_actions += [cModeSpin]
+        btnBackClick()
+  
+  #check the cliff light strength
+  for i in range(4):
+    if cliff[i] < 1500:
+      robo_draw_info = 3
+      robo_draw_color = 'lime'
+      if len(explore_actions) == 0 and robo_explore:
+        explore_actions += [cModeSpin]
+        btnBackClick()
+        
+  #check the crash bumps
+  for i in range(2):
+    if crash[i] > 0:
+      robo_draw_info = 2
+      robo_draw_color = 'red'
+      if len(explore_actions) == 0 and robo_explore:
+        explore_actions += [cModeSpin]
+        btnBackClick()
 
 def rdata_enc_feedback(data):
   global robo_state, last_left_enc, last_right_enc, PLeft, PRight, robo_vector_xy, robo_vector_pol
@@ -360,6 +392,7 @@ def act_on_data(data):
       rdata_cliff(data[28:36])
       rdata_crash(data[0])              #packet 7
       rdata_motor_current(data[71:75])
+      robo_safety()
       update_info()
       data_request_time = time.time() + 0.088
     else:
@@ -632,6 +665,7 @@ def formatColor(r, g, b):
     
 def draw_robo():
   global grid_world, explore_actions
+  global robo_draw_color, robo_draw_info
   
   map_x = (robo_vector_xy[0] // 10) + half_world
   map_y = (-robo_vector_xy[1] // 10) + half_world
@@ -675,39 +709,13 @@ def draw_robo():
   
   #print(map_x, map_y, deg)
   try:
-    info = 1
-    o_color = 'black'
-    
-    #check the bumper light strength
-    for i in range(6):
-      if bumper[i] > 50:
-        info = 2
-        o_color = 'red'
-        if len(explore_actions) == 0 and robo_explore:
-          explore_actions += [cModeSpin]
-          btnBackClick()
-    
-    #check the cliff light strength
-    for i in range(4):
-      if cliff[i] < 1500:
-        info = 3
-        o_color = 'lime'
-        if len(explore_actions) == 0 and robo_explore:
-          explore_actions += [cModeSpin]
-          btnBackClick()
-          
-    #check the crash bumps
-    for i in range(2):
-      if crash[i] > 0:
-        info = 2
-        o_color = 'red'
-        if len(explore_actions) == 0 and robo_explore:
-          explore_actions += [cModeSpin]
-          btnBackClick()
-    
+        
     if grid_world[int(map_x)][int(map_y)] == 0:    
-      grid_world[int(map_x)][int(map_y)] = info
-      _canvas_map.create_rectangle(map_x, map_y, map_x+1, map_y+1, outline = o_color)
+      grid_world[int(map_x)][int(map_y)] = robo_draw_info
+      _canvas_map.create_rectangle(map_x, map_y, map_x+1, map_y+1, outline = robo_draw_color)
+      
+    robo_draw_info = 1
+    robo_draw_color = 'black'
   except:
     print('exception')
     
