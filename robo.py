@@ -247,8 +247,8 @@ def robo_safety():
       robo_draw_info = 3
       robo_draw_color = 'lime'
       if len(explore_actions) == 0 and robo_explore:
-        pwm_L = -155
-        pwm_R = -155
+        pwm_L = -250
+        pwm_R = -250
         explore_actions += [cModeSpin]
         btnBackClick()
         robo_sing()
@@ -352,7 +352,7 @@ def robo_read():
     
     if robo_read_data:
       if robo_stream_enabled and robo_stream_mode:
-        data = ser.read(8 * 84)
+        data = ser.read(7 * 84)
         offset = 0
         for i in range(len(data)):
           if data[i] == 19:
@@ -811,8 +811,9 @@ def btnBackClick():
   R_Target = PRight - (CPR * 1)
   L_Target = PLeft - (CPR * 1)
   
-  pwm_R = 0
-  pwm_L = 0
+  if (pwm_R > 0):
+    pwm_R = 0
+    pwm_L = 0
   robo_state = rCloseLoop
 
 def btnExploreClick():
