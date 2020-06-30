@@ -239,7 +239,7 @@ def robo_safety():
   
   #check the cliff light strength
   for i in range(4):
-    if cliff[i] < 2000:
+    if cliff[i] < 1500:
       robo_draw_info = 3
       robo_draw_color = 'lime'
       if len(explore_actions) == 0 and robo_explore:
