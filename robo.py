@@ -104,7 +104,8 @@ radian_to_degrees = 180 / math.pi
 #counts_180 = this is 843   R * CPR / 2 / rw
 #counts_180 = 815
 #counts_180 = 825
-counts_180 = 791   # the closest yet.
+#counts_180 = 791   # the closest yet.
+counts_180 = 821.3
 
 counts_limit = world_size * 10 * CPR_div_2_pi_rw
 
@@ -317,6 +318,16 @@ def rdata_enc_feedback(data):
     change_right -= 65535
   elif change_right < -32768:
     change_right += 65535
+    
+  if pwm_L < 0:
+    change_left = -abs(change_left)
+  else:
+    change_left = abs(change_left)
+    
+  if pwm_R < 0:
+    change_right = -abs(change_right)
+  else:
+    change_right = abs(change_right)
     
   PLeft += change_left
   PRight += change_right
