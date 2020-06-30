@@ -60,7 +60,9 @@ pwm_accel = 3
 pwm_last_error = 0
 
 bumper = [0] * 6
-bumper_arc = [None] * 6
+crash = [0] * 2
+cliff = [0] * 4
+bumper_arc = [None] * 6    #for drawing on canvas
 motor_current = [0] * 2
 
 cModeStraight = 'straight'
@@ -271,6 +273,20 @@ def rdata_bumpers(data):
   bumper[3] = int.from_bytes(data[6:8], byteorder='big', signed=False)
   bumper[4] = int.from_bytes(data[8:10], byteorder='big', signed=False)
   bumper[5] = int.from_bytes(data[10:12], byteorder='big', signed=False)
+  
+def rdata_cliff(data):
+  global cliff
+  
+  cliff[0] = int.from_bytes(data[0:2], byteorder='big', signed=False)
+  cliff[1] = int.from_bytes(data[2:4], byteorder='big', signed=False)
+  cliff[2] = int.from_bytes(data[4:6], byteorder='big', signed=False)
+  cliff[3] = int.from_bytes(data[6:8], byteorder='big', signed=False)
+  
+def rdata_crash(data):
+  global crash
+  
+  crash[0] = data & 2
+  crash[1] = data & 1
 
 def rdata_motor_current(data):
   global motor_current
@@ -341,6 +357,8 @@ def act_on_data(data):
       rdata_button_press(data[11])      #packet 18
       rdata_enc_feedback(data[52:56])   #packets 43 and 44
       rdata_bumpers(data[57:69])
+      rdata_cliff(data[28:36])
+      rdata_crash(data[0])              #packet 7
       rdata_motor_current(data[71:75])
       update_info()
       data_request_time = time.time() + 0.088
@@ -659,11 +677,31 @@ def draw_robo():
   try:
     info = 1
     o_color = 'black'
+    
+    #check the bumper light strength
     for i in range(6):
       if bumper[i] > 50:
         info = 2
         o_color = 'red'
-        if len(explore_actions) == 0:
+        if len(explore_actions) == 0 and robo_explore:
+          explore_actions += [cModeSpin]
+          btnBackClick()
+    
+    #check the cliff light strength
+    for i in range(4):
+      if cliff[i] < 500:
+        info = 3
+        o_color = 'lime'
+        if len(explore_actions) == 0 and robo_explore:
+          explore_actions += [cModeSpin]
+          btnBackClick()
+          
+    #check the crash bumps
+    for i in range(2):
+      if crash[i] > 0:
+        info = 2
+        o_color = 'red'
+        if len(explore_actions) == 0 and robo_explore:
           explore_actions += [cModeSpin]
           btnBackClick()
     
@@ -697,6 +735,9 @@ def update_info():
       
     for i in range(2):
       text((5, 200+i*20), formatColor(0, 0, 0), f'motor current {i} {motor_current[i]}', font='Helvetica', size=8, style='normal', anchor="nw")
+      
+    for i in range(4):
+      text((5, 240+i*20), formatColor(0, 0, 0), f'cliff {i} {cliff[i]}', font='Helvetica', size=8, style='normal', anchor="nw")
       
     draw_robo()
       
