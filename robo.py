@@ -529,6 +529,8 @@ def act_on_data(data):
         pwm_L = -pwm_max
       elif pwm_L > pwm_max:
         pwm_L = pwm_max
+        
+      print(pwm_R, pwm_L, robo_orientation)
     
       robo_pwm(pwm_R, pwm_L)
 
@@ -830,8 +832,8 @@ def btnGoClick():
   
   R_L_Offset = PRight - PLeft - error_function(PLeft, PRight)
   C_Mode = cModeStraight
-  R_Target += (CPR * 10)
-  L_Target += (CPR * 10)
+  R_Target += (CPR * 1)
+  L_Target += (CPR * 1)
   
   pwm_R = 25
   pwm_L = 25
