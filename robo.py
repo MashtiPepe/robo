@@ -89,8 +89,8 @@ C_Mode = cModeStraight
 # r (travel distance mm) = (PLeft + PRight) / 2   * (2 pi rw) / CPR
 # theta (orientation range 0 to 2 pi) = (PRight - PRight) / (D / 2)
 #
-rw = 35
-CPR = 486.78   #508.86
+rw = 36
+CPR = 508.8
 D = 232   #217 inside dim, 232 center dim, 247 outside dim
 R = D/2
 pi_rw = math.pi * rw
@@ -178,7 +178,7 @@ def robo_calc_pos(PLeft, PRight):
   
   #print(rho, phi, PLeft, PRight, last_PLeft, last_PRight)
   
-  (x, y) = polar_to_xy((rho, robo_orientation))
+  (x, y) = polar_to_xy((rho, phi))
   
   #print(rho, phi, x, y, robo_vector_xy[0], robo_vector_xy[1])
   
