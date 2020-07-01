@@ -122,7 +122,7 @@ def polar_theta(PLeft, PRight):
   global robo_orientation, robo_theta
   
   # (PRight - PLeft) / R
-  robo_theta = (PRight - PLeft) / 2 / counts_180 * math.pi
+  robo_theta = (PRight - PLeft) / counts_180 * math.pi
     
   
   while robo_theta > two_pi:
