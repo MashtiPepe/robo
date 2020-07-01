@@ -37,6 +37,7 @@ robo_angle = 0
 robo_vector_pol = [0, 0]
 robo_vector_xy = [0, 0]
 robo_orientation = 0
+robo_theta = 0
 last_PLeft = 0
 last_PRight = 0
 old_pleft = 0
@@ -118,26 +119,26 @@ def polar_r(PLeft, PRight):
 #range is 0 to 2pi
 #orientation in radians                
 def polar_theta(PLeft, PRight):
-  global robo_orientation
+  global robo_orientation, robo_theta
   
   # (PRight - PLeft) / R
-  theta = (PRight - PLeft) / 2 / counts_180 * math.pi
+  robo_theta = (PRight - PLeft) / 2 / counts_180 * math.pi
     
   
-  while theta > two_pi:
-    theta -= two_pi
-  while theta < 0:
-    theta += two_pi
+  while robo_theta > two_pi:
+    robo_theta -= two_pi
+  while robo_theta < 0:
+    robo_theta += two_pi
   
   #print(PRight - PLeft)  
-  robo_orientation += theta  
+  robo_orientation += robo_theta  
     
   while robo_orientation > two_pi:
     robo_orientation -= two_pi
   while robo_orientation < 0:
     robo_orientation += two_pi
   
-  return theta
+  return robo_theta
   
 def radians_to_deg(theta):
   return theta * 360 / two_pi
@@ -170,15 +171,17 @@ def robo_calc_pos(PLeft, PRight):
   
   #print('Calc Pos', PLeft, PRight)
   
+  phi = robo_theta
+  
   #update the new position in xy and polar coordinates
   #based on encoder feedback
   #movement since last time
   rho = polar_r((PLeft - last_PLeft), (PRight - last_PRight))
-  phi = polar_theta((PLeft - last_PLeft), (PRight - last_PRight))
+  polar_theta((PLeft - last_PLeft), (PRight - last_PRight))  #calculate new instant angle for next calcs
   
   #print(rho, phi, PLeft, PRight, last_PLeft, last_PRight)
   
-  (x, y) = polar_to_xy((rho, phi))
+  (x, y) = polar_to_xy((rho, phi))   #use the old robo_theta for the calcs.
   
   #print(rho, phi, x, y, robo_vector_xy[0], robo_vector_xy[1])
   
@@ -280,7 +283,7 @@ def rdata_enc_feedback(data):
   global last_PLeft, last_PRight
   global old_pleft, old_pright
   global R_Target, L_Target, R_L_Offset
-  global robo_orientation
+  global robo_orientation, robo_theta
   global grid_world, robo_explore, explore_actions
   
   robo_left_enc = int.from_bytes(data[0:2], byteorder='big', signed=True)
@@ -300,6 +303,7 @@ def rdata_enc_feedback(data):
     robo_vector_xy = [0, 0]
     robo_vector_pol = [0, 0]
     robo_orientation = 0
+    robo_theta = 0
     grid_world[::] = 0
     robo_explore = False
     explore_actions = []
@@ -793,7 +797,7 @@ def update_info():
     info_status.set(f'{robo_state}  {C_Mode}  {explore_actions}')
     info_position.set(f'R: {PRight}->{R_Target:.0f}  L: {PLeft}  Diff: {PRight - PLeft}')
     info_pwm.set(f'pwm {pwm_R:.0f} {pwm_L:.0f} {error_function(PLeft, PRight)} R_L_Offset: {R_L_Offset}')
-    info_xy.set(f'x,y,t {robo_vector_xy[0]:.1f} {robo_vector_xy[1]:.1f} {robo_orientation*radian_to_degrees:.1f} \n')
+    info_xy.set(f'x,y,t,o {robo_vector_xy[0]:.1f} {robo_vector_xy[1]:.1f} {robo_theta*radian_to_degrees:.1f} {robo_orientation*radian_to_degrees:.1f} \n')
     info_bumper.set(f' bumper 0 {bumper[0]} \n bumper 1 {bumper[1]} \n bumper 2 {bumper[2]} \n bumper 3 {bumper[3]} \n bumper 4 {bumper[4]} \n bumper 5 {bumper[5]}')
     info_current.set(f' motor current 0 {motor_current[0]} \n motor current 1 {motor_current[1]} ')
     info_cliff.set(f' cliff 0 {cliff[0]} \n cliff 1 {cliff[1]} \n cliff 2 {cliff[2]} \n cliff 3 {cliff[3]} ')
