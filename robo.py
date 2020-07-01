@@ -131,7 +131,8 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   
   robo_theta = (PRight - PLeft) / 2 / counts_180 * math.pi
   
-  robo_theta += double_angle / counts_180 * math.pi
+  if abs(l_travel) < 2 or abs(r_travel) < 2:
+    robo_theta += double_angle / counts_180 * math.pi
   
   
   while robo_theta > two_pi:
