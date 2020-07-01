@@ -109,7 +109,7 @@ radian_to_degrees = 180 / math.pi
 #counts_180 = 791   # the closest yet.
 counts_180 = 821.3
 
-alignment_error = 0.1   #radians per mm.
+alignment_error = 1.5445e-4   #radians per mm.
 
 counts_limit = world_size * 10 * CPR_div_2_pi_rw
 
