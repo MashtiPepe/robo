@@ -819,11 +819,11 @@ def btnGoClick():
   
   R_L_Offset = PRight - PLeft - error_function(PLeft, PRight)
   C_Mode = cModeStraight
-  R_Target += (CPR * 1)
-  L_Target += (CPR * 1)
+  R_Target += (CPR * 10)
+  L_Target += (CPR * 10)
   
-  pwm_R = 0
-  pwm_L = 0
+  pwm_R = 25
+  pwm_L = 25
   reset_check_stuck()
   robo_state = rCloseLoop
 
@@ -836,8 +836,8 @@ def btnSpinClick():
   R_Target += counts_180  #815
   L_Target -= counts_180  #815
   
-  pwm_R = 0
-  pwm_L = 0
+  pwm_R = 25
+  pwm_L = -25
   reset_check_stuck()
   robo_state = rCloseLoop
   
@@ -851,8 +851,8 @@ def btnBackClick():
   L_Target = PLeft - (CPR * 1)
   
   if (pwm_R > 0):
-    pwm_R = 0
-    pwm_L = 0
+    pwm_R = -25
+    pwm_L = -25
   reset_check_stuck()
   robo_state = rCloseLoop
 
@@ -865,8 +865,8 @@ def btnExploreClick():
   R_Target += counts_limit
   L_Target += counts_limit
   
-  pwm_R = 0
-  pwm_L = 0
+  pwm_R = 25
+  pwm_L = 25
   reset_check_stuck()
   robo_state = rCloseLoop
   explore_actions = []
