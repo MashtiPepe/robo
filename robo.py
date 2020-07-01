@@ -130,7 +130,7 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   #double_angle = r_travel - l_travel
   
   if C_Mode != cModeSpin:
-    robo_theta = (r_travel - l_travel) * 1.3 / counts_180 * math.pi
+    robo_theta = (r_travel - l_travel) * 2 / counts_180 * math.pi
   else:
     robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
   
@@ -526,7 +526,7 @@ def act_on_data(data):
         pwm_R -= pwm_accel
       
       error = error_function(PLeft, PRight)  
-      correction = (error * 0.5) 
+      correction = (error * 0.36) 
       if C_Mode in {cModeStraight, cModeBack}:
         pwm_L = pwm_R + correction
       else:
