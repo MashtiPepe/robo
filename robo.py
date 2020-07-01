@@ -118,7 +118,7 @@ def polar_r(PLeft, PRight):
   
 #range is 0 to 2pi
 #orientation in radians                
-def polar_theta(PLeft, PRight):
+def polar_theta(PLeft, PRight, rho):
   global robo_orientation, robo_theta
   
   # (PRight - PLeft) / R
@@ -131,12 +131,13 @@ def polar_theta(PLeft, PRight):
     robo_theta += two_pi
   
   #print(PRight - PLeft)  
-  robo_orientation += robo_theta  
-    
-  while robo_orientation > two_pi:
-    robo_orientation -= two_pi
-  while robo_orientation < 0:
-    robo_orientation += two_pi
+  if abs(rho) > 1e-4:
+    robo_orientation += robo_theta  
+      
+    while robo_orientation > two_pi:
+      robo_orientation -= two_pi
+    while robo_orientation < 0:
+      robo_orientation += two_pi
   
   return robo_theta
   
@@ -177,7 +178,7 @@ def robo_calc_pos(PLeft, PRight):
   #based on encoder feedback
   #movement since last time
   rho = polar_r((PLeft - last_PLeft), (PRight - last_PRight))
-  polar_theta(PLeft, PRight)  #calculate new instant angle for next calcs
+  polar_theta(PLeft, PRight, rho)  #calculate new instant angle for next calcs
   
   #print(rho, phi, PLeft, PRight, last_PLeft, last_PRight)
   
