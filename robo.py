@@ -136,7 +136,7 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   
   if (l_travel < 4 and r_travel > 4) or (r_travel < 4 and l_travel > 4):
     robo_theta *= 2
-    print('double angle')
+    print('double angle', r_travel, l_travel)
   
   
   while robo_theta > two_pi:
