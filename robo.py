@@ -146,7 +146,7 @@ def polar_theta(PLeft, PRight, rho):
       
   robo_last_theta = robo_theta
   
-  return robo_theta
+  return alignment_correction
   
 def radians_to_deg(theta):
   return theta * 360 / two_pi
@@ -185,11 +185,11 @@ def robo_calc_pos(PLeft, PRight):
   #based on encoder feedback
   #movement since last time
   rho = polar_r((PLeft - last_PLeft), (PRight - last_PRight))
-  polar_theta(PLeft, PRight, rho)  #calculate new instant angle for next calcs
+  alignment_correction = polar_theta(PLeft, PRight, rho)  #calculate new instant angle for next calcs
   
   #print(rho, phi, PLeft, PRight, last_PLeft, last_PRight)
   
-  (x, y) = polar_to_xy((rho, phi))   #use the old robo_theta for the calcs.
+  (x, y) = polar_to_xy((rho, phi + alignment_correction))   #use the old robo_theta for the calcs.
   
   #print(rho, phi, x, y, robo_vector_xy[0], robo_vector_xy[1])
   
