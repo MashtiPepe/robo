@@ -411,8 +411,12 @@ def robo_read():
     if offset > 0:
       garbage = ser.read(offset)
       
+    #print(offset, data[504+offset])
+      
     if len(data) > (offset + 84 + 84 + 84 + 84 + 84 + 84 + 84):
-      if (data[0+offset] == 19) and (data[84+offset] == 19) and (data[168+offset] == 19) and (data[252+offset] == 19) and (data[336+offset] == 19) and (data[420+offset] == 19):
+      if (data[0+offset] == 19) and (data[84+offset] == 19) and (data[168+offset] == 19) and       \
+         (data[252+offset] == 19) and (data[336+offset] == 19) and (data[420+offset] == 19) and    \
+         (data[504+offset] == 19):
         sub_data = data[0+offset+3:0+offset+83]
         act_on_data(sub_data)
       
