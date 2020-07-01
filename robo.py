@@ -127,7 +127,8 @@ def polar_theta(PLeft, PRight, rho):
   # (PRight - PLeft) / R
   robo_theta = (PRight - PLeft) / 2 / counts_180 * math.pi
   
-  robo_theta += rho * alignment_error
+  alignment_correction = rho * alignment_error
+  robo_theta += alignment_correction
     
   
   while robo_theta > two_pi:
@@ -136,7 +137,7 @@ def polar_theta(PLeft, PRight, rho):
     robo_theta += two_pi
   
   #print(PRight - PLeft)  
-  robo_orientation += (robo_theta - robo_last_theta)  
+  robo_orientation += (robo_theta - robo_last_theta) + alignment_correction 
                                 
   while robo_orientation > two_pi:
     robo_orientation -= two_pi
