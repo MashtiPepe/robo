@@ -265,8 +265,8 @@ def robo_safety():
       robo_draw_info = 3
       robo_draw_color = 'lime'
       if len(explore_actions) == 0 and robo_explore:
-        pwm_L = -250
-        pwm_R = -250
+        pwm_L = -35
+        pwm_R = -35
         explore_actions += [cModeSpin, cModeDummy]
         btnBackClick()
         robo_sing()
