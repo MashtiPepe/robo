@@ -136,6 +136,7 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   
   if (l_travel < 4 and r_travel > 4) or (r_travel < 4 and l_travel > 4):
     robo_theta *= 2
+    print('double angle')
   
   
   while robo_theta > two_pi:
@@ -502,7 +503,7 @@ def act_on_data(data):
       
   if robo_state == rCloseLoop:
     if abs(PRight - R_Target) < 5:
-      print('out of close loop')
+      #print('out of close loop')
       robo_pwm(0, 0)
       #robo_drive(0, 0)
       robo_state = rIdle
