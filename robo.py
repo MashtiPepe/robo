@@ -177,7 +177,7 @@ def robo_calc_pos(PLeft, PRight):
   #based on encoder feedback
   #movement since last time
   rho = polar_r((PLeft - last_PLeft), (PRight - last_PRight))
-  polar_theta((PLeft - last_PLeft), (PRight - last_PRight))  #calculate new instant angle for next calcs
+  polar_theta(PLeft, PRight)  #calculate new instant angle for next calcs
   
   #print(rho, phi, PLeft, PRight, last_PLeft, last_PRight)
   
