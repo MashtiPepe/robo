@@ -120,15 +120,19 @@ def polar_r(PLeft, PRight):
   
 #range is 0 to 2pi
 #orientation in radians                
-def polar_theta(PLeft, PRight, rho):
+def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   global robo_orientation, robo_theta, robo_last_theta
   
-  # (PRight - PLeft) / R
+  l_travel = PLeft - last_PLeft
+  r_travel = PRight - last_PRight
+  
+  #how far did one go more than the other?
+  double_angle = r_travel - l_travel
+  
   robo_theta = (PRight - PLeft) / 2 / counts_180 * math.pi
   
-  #alignment_correction = rho * alignment_error
-  #robo_theta += alignment_correction
-    
+  robo_theta += double_angle / counts_180 * math.pi
+  
   
   while robo_theta > two_pi:
     robo_theta -= two_pi
@@ -136,7 +140,7 @@ def polar_theta(PLeft, PRight, rho):
     robo_theta += two_pi
   
   #print(PRight - PLeft)  
-  robo_orientation += (robo_theta - robo_last_theta) #+ alignment_correction 
+  robo_orientation += (robo_theta - robo_last_theta)
                                 
   while robo_orientation > two_pi:
     robo_orientation -= two_pi
@@ -145,7 +149,6 @@ def polar_theta(PLeft, PRight, rho):
       
   robo_last_theta = robo_theta
   
-  #return alignment_correction
   
 def radians_to_deg(theta):
   return theta * 360 / two_pi
@@ -184,7 +187,7 @@ def robo_calc_pos(PLeft, PRight):
   #based on encoder feedback
   #movement since last time
   rho = polar_r((PLeft - last_PLeft), (PRight - last_PRight))
-  polar_theta(PLeft, PRight, rho)  #calculate new instant angle for next calcs
+  polar_theta(PLeft, PRight, last_PLeft, last_PRight)  #calculate new instant angle for next calcs
   
   #print(rho, phi, PLeft, PRight, last_PLeft, last_PRight)
   
