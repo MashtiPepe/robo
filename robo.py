@@ -108,7 +108,7 @@ radian_to_degrees = 180 / math.pi
 #counts_180 = 791   # the closest yet.
 counts_180 = 821.3
 
-alignment_error = 0  #5.7397e-5   #radians per mm.
+#alignment_error = 0  #5.7397e-5   #radians per mm.
 
 counts_limit = world_size * 10 * CPR_div_2_pi_rw
 
@@ -126,8 +126,8 @@ def polar_theta(PLeft, PRight, rho):
   # (PRight - PLeft) / R
   robo_theta = (PRight - PLeft) / 2 / counts_180 * math.pi
   
-  alignment_correction = rho * alignment_error
-  robo_theta += alignment_correction
+  #alignment_correction = rho * alignment_error
+  #robo_theta += alignment_correction
     
   
   while robo_theta > two_pi:
@@ -136,7 +136,7 @@ def polar_theta(PLeft, PRight, rho):
     robo_theta += two_pi
   
   #print(PRight - PLeft)  
-  robo_orientation += (robo_theta - robo_last_theta) + alignment_correction 
+  robo_orientation += (robo_theta - robo_last_theta) #+ alignment_correction 
                                 
   while robo_orientation > two_pi:
     robo_orientation -= two_pi
@@ -145,7 +145,7 @@ def polar_theta(PLeft, PRight, rho):
       
   robo_last_theta = robo_theta
   
-  return alignment_correction
+  #return alignment_correction
   
 def radians_to_deg(theta):
   return theta * 360 / two_pi
@@ -184,7 +184,7 @@ def robo_calc_pos(PLeft, PRight):
   #based on encoder feedback
   #movement since last time
   rho = polar_r((PLeft - last_PLeft), (PRight - last_PRight))
-  alignment_correction = polar_theta(PLeft, PRight, rho)  #calculate new instant angle for next calcs
+  polar_theta(PLeft, PRight, rho)  #calculate new instant angle for next calcs
   
   #print(rho, phi, PLeft, PRight, last_PLeft, last_PRight)
   
@@ -530,7 +530,7 @@ def act_on_data(data):
       elif pwm_L > pwm_max:
         pwm_L = pwm_max
         
-      print(f'{pwm_R:.0f} {pwm_L:.0f} {radians_to_deg(robo_orientation):.2f} {PRight} {PLeft} {PRight-PLeft}')
+      #print(f'{pwm_R:.0f} {pwm_L:.0f} {radians_to_deg(robo_orientation):.2f} {PRight} {PLeft} {PRight-PLeft}')
     
       robo_pwm(pwm_R, pwm_L)
 
@@ -832,8 +832,8 @@ def btnGoClick():
   
   R_L_Offset = PRight - PLeft - error_function(PLeft, PRight)
   C_Mode = cModeStraight
-  R_Target += (CPR * 1)
-  L_Target += (CPR * 1)
+  R_Target += (CPR * 10)
+  L_Target += (CPR * 10)
   
   pwm_R = 25
   pwm_L = 25
