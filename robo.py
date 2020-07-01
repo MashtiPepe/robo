@@ -38,6 +38,7 @@ robo_vector_pol = [0, 0]
 robo_vector_xy = [0, 0]
 robo_orientation = 0
 robo_theta = 0
+robo_last_theta = 0
 last_PLeft = 0
 last_PRight = 0
 old_pleft = 0
@@ -118,8 +119,8 @@ def polar_r(PLeft, PRight):
   
 #range is 0 to 2pi
 #orientation in radians                
-def polar_theta(PLeft, PRight, rho):
-  global robo_orientation, robo_theta
+def polar_theta(PLeft, PRight):
+  global robo_orientation, robo_theta, robo_last_theta
   
   # (PRight - PLeft) / R
   robo_theta = (PRight - PLeft) / counts_180 * math.pi
@@ -131,13 +132,14 @@ def polar_theta(PLeft, PRight, rho):
     robo_theta += two_pi
   
   #print(PRight - PLeft)  
-  if abs(rho) > 1e-4:
-    robo_orientation += robo_theta  
+  robo_orientation += (robo_theta - robo_last_theta)  
+    
+  while robo_orientation > two_pi:
+    robo_orientation -= two_pi
+  while robo_orientation < 0:
+    robo_orientation += two_pi
       
-    while robo_orientation > two_pi:
-      robo_orientation -= two_pi
-    while robo_orientation < 0:
-      robo_orientation += two_pi
+  robo_last_theta = robo_theta
   
   return robo_theta
   
@@ -178,7 +180,7 @@ def robo_calc_pos(PLeft, PRight):
   #based on encoder feedback
   #movement since last time
   rho = polar_r((PLeft - last_PLeft), (PRight - last_PRight))
-  polar_theta(PLeft, PRight, rho)  #calculate new instant angle for next calcs
+  polar_theta(PLeft, PRight)  #calculate new instant angle for next calcs
   
   #print(rho, phi, PLeft, PRight, last_PLeft, last_PRight)
   
@@ -284,7 +286,7 @@ def rdata_enc_feedback(data):
   global last_PLeft, last_PRight
   global old_pleft, old_pright
   global R_Target, L_Target, R_L_Offset
-  global robo_orientation, robo_theta
+  global robo_orientation, robo_theta, robo_last_theta
   global grid_world, robo_explore, explore_actions
   
   robo_left_enc = int.from_bytes(data[0:2], byteorder='big', signed=True)
@@ -305,6 +307,7 @@ def rdata_enc_feedback(data):
     robo_vector_pol = [0, 0]
     robo_orientation = 0
     robo_theta = 0
+    robo_last_theta = 0
     grid_world[::] = 0
     robo_explore = False
     explore_actions = []
