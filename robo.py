@@ -135,7 +135,7 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   l_travel = abs(l_travel)
   
   if C_Mode != cModeSpin:
-    if (l_travel < 4 and r_travel > 4) or (r_travel < 4 and l_travel > 4):
+    if (l_travel < 1 and r_travel > 0) or (r_travel < 1 and l_travel > 0):
       robo_theta *= 2
       print('double angle', r_travel, l_travel)
     elif (l_travel > 0) or (r_travel > 0):
