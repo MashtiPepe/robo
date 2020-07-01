@@ -109,6 +109,8 @@ radian_to_degrees = 180 / math.pi
 #counts_180 = 791   # the closest yet.
 counts_180 = 821.3
 
+alignment_error = 0.1   #radians per mm.
+
 counts_limit = world_size * 10 * CPR_div_2_pi_rw
 
 # travel in mm
@@ -119,11 +121,13 @@ def polar_r(PLeft, PRight):
   
 #range is 0 to 2pi
 #orientation in radians                
-def polar_theta(PLeft, PRight):
+def polar_theta(PLeft, PRight, rho):
   global robo_orientation, robo_theta, robo_last_theta
   
   # (PRight - PLeft) / R
   robo_theta = (PRight - PLeft) / 2 / counts_180 * math.pi
+  
+  robo_theta += rho * alignment_error
     
   
   while robo_theta > two_pi:
@@ -180,7 +184,7 @@ def robo_calc_pos(PLeft, PRight):
   #based on encoder feedback
   #movement since last time
   rho = polar_r((PLeft - last_PLeft), (PRight - last_PRight))
-  polar_theta(PLeft, PRight)  #calculate new instant angle for next calcs
+  polar_theta(PLeft, PRight, rho)  #calculate new instant angle for next calcs
   
   #print(rho, phi, PLeft, PRight, last_PLeft, last_PRight)
   
