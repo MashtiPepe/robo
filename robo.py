@@ -530,7 +530,7 @@ def act_on_data(data):
       elif pwm_L > pwm_max:
         pwm_L = pwm_max
         
-      print(f'{pwm_R:.0f} {pwm_L:.0f} {robo_orientation:.0f} {PRight} {PLeft}')
+      print(f'{pwm_R:.0f} {pwm_L:.0f} {radians_to_deg(robo_orientation):.2f} {PRight} {PLeft} {PRight-PLeft}')
     
       robo_pwm(pwm_R, pwm_L)
 
