@@ -64,8 +64,7 @@ pwm_R = 0
 pwm_L = 0
 pwm_norm = 70
 pwm_max = 120
-pwm_accel = 3
-pwm_last_error = 0
+pwm_accel = 1
 
 bumper = [0] * 6
 crash = [0] * 2
@@ -109,7 +108,7 @@ radian_to_degrees = 180 / math.pi
 #counts_180 = 791   # the closest yet.
 counts_180 = 821.3
 
-alignment_error = 5.7397e-5   #radians per mm.
+alignment_error = 0  #5.7397e-5   #radians per mm.
 
 counts_limit = world_size * 10 * CPR_div_2_pi_rw
 
@@ -425,7 +424,7 @@ def act_on_data(data):
   global robo_state, robo_travel, robo_angle
   global key
   global data_request_time
-  global pwm_R, pwm_L, pwm_last_error, pwm_norm
+  global pwm_R, pwm_L, pwm_norm
   
   #response to packet id 100  
   if len(data) == 80:
@@ -515,7 +514,7 @@ def act_on_data(data):
         pwm_R -= pwm_accel
       
       error = error_function(PLeft, PRight)  
-      correction = (error * 0.36) #- pwm_last_error
+      correction = (error * 0.36) 
       if C_Mode in {cModeStraight, cModeBack}:
         pwm_L = pwm_R + correction
       else:
@@ -530,7 +529,6 @@ def act_on_data(data):
         pwm_L = -pwm_max
       elif pwm_L > pwm_max:
         pwm_L = pwm_max
-      pwm_last_error = correction + (pwm_last_error * 0.99)
     
       robo_pwm(pwm_R, pwm_L)
 
