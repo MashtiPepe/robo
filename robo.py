@@ -189,7 +189,7 @@ def robo_calc_pos(PLeft, PRight):
   
   #print(rho, phi, PLeft, PRight, last_PLeft, last_PRight)
   
-  (x, y) = polar_to_xy((rho, phi + alignment_correction))   #use the old robo_theta for the calcs.
+  (x, y) = polar_to_xy((rho, robo_orientation))   #use the old robo_theta for the calcs.
   
   #print(rho, phi, x, y, robo_vector_xy[0], robo_vector_xy[1])
   
