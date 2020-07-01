@@ -129,17 +129,20 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   #how far did one go more than the other?
   #double_angle = r_travel - l_travel
   
-  robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
-  
-  r_travel = abs(r_travel)
-  l_travel = abs(l_travel)
-  
   if C_Mode != cModeSpin:
-    if (l_travel < 1 and r_travel > 0) or (r_travel < 1 and l_travel > 0):
-      robo_theta *= 2
-      print('double angle', r_travel, l_travel)
-    elif (l_travel > 0) or (r_travel > 0):
-      print(r_travel, l_travel)
+    robo_theta = (r_travel - l_travel) / counts_180 * math.pi
+  else:
+    robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
+  
+  #r_travel = abs(r_travel)
+  #l_travel = abs(l_travel)
+  
+  #if C_Mode != cModeSpin:
+  #  if (l_travel < 1 and r_travel > 0) or (r_travel < 1 and l_travel > 0):
+  #    robo_theta *= 2
+  #    print('double angle', r_travel, l_travel)
+  #  elif (l_travel > 0) or (r_travel > 0):
+  #    print(r_travel, l_travel)
   
   
   while robo_theta > two_pi:
