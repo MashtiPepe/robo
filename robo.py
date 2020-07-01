@@ -144,7 +144,7 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
     robo_theta += two_pi
   
   #print(PRight - PLeft)  
-  robo_orientation += (robo_theta - robo_last_theta)
+  robo_orientation += robo_theta  #(robo_theta - robo_last_theta)
                                 
   while robo_orientation > two_pi:
     robo_orientation -= two_pi
