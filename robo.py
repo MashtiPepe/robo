@@ -109,7 +109,7 @@ radian_to_degrees = 180 / math.pi
 #counts_180 = 791   # the closest yet.
 counts_180 = 821.3
 
-alignment_error = 1.5445e-4   #radians per mm.
+alignment_error = 8.7397e-5   #radians per mm.
 
 counts_limit = world_size * 10 * CPR_div_2_pi_rw
 
@@ -860,8 +860,8 @@ def btnBackClick():
   
   R_L_Offset = PRight - PLeft - error_function(PLeft, PRight)
   C_Mode = cModeBack
-  R_Target = PRight - (CPR * 1)
-  L_Target = PLeft - (CPR * 1)
+  R_Target = PRight - (CPR * 10)
+  L_Target = PLeft - (CPR * 10)
   
   if (pwm_R > 0):
     pwm_R = -25
