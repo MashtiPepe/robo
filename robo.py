@@ -526,7 +526,7 @@ def act_on_data(data):
         pwm_R -= pwm_accel
       
       error = error_function(PLeft, PRight)  
-      correction = (error * 0.36) 
+      correction = (error * 0.5) 
       if C_Mode in {cModeStraight, cModeBack}:
         pwm_L = pwm_R + correction
       else:
