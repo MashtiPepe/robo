@@ -130,10 +130,10 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   #double_angle = r_travel - l_travel
   
   if C_Mode != cModeSpin:
-    if l_travel < 4:
+    if abs(l_travel) < 4:
       robo_theta = (r_travel - l_travel) * 2 / counts_180 * math.pi
-    else:
-      robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
+    #else:
+    #  robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
   else:
     robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
   
