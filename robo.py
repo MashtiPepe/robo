@@ -127,12 +127,15 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   r_travel = PRight - last_PRight
   
   #how far did one go more than the other?
-  double_angle = r_travel - l_travel
+  #double_angle = r_travel - l_travel
   
-  robo_theta = (PRight - PLeft) / 2 / counts_180 * math.pi
+  robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
   
-  if abs(l_travel) < 2 or abs(r_travel) < 2:
-    robo_theta += double_angle / counts_180 * math.pi
+  r_travel = abs(r_travel)
+  l_travel = abs(l_travel)
+  
+  if (l_travel < 4 and r_travel > 4) or (r_travel < 4 and l_travel > 4):
+    robo_theta *= 2
   
   
   while robo_theta > two_pi:
