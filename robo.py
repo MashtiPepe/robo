@@ -65,7 +65,7 @@ pwm_L = 0
 pwm_norm = 70
 pwm_max = 120
 pwm_accel = 1
-pwm_initial = 45
+pwm_initial = 55
 pwm_last_correction = 0
 pwm_correction_time = 0
 
