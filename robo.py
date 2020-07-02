@@ -66,6 +66,8 @@ pwm_norm = 70
 pwm_max = 120
 pwm_accel = 1
 pwm_initial = 45
+pwm_last_correction = 0
+pwm_correction_time = 0
 
 bumper = [0] * 6
 crash = [0] * 2
@@ -446,7 +448,7 @@ def act_on_data(data):
   global robo_state, robo_travel, robo_angle
   global key
   global data_request_time
-  global pwm_R, pwm_L, pwm_norm
+  global pwm_R, pwm_L, pwm_norm, pwm_last_correction, pwm_correction_time
   
   #response to packet id 100  
   if len(data) == 80:
@@ -522,39 +524,84 @@ def act_on_data(data):
       #robo_drive(0, 0)
       robo_state = rIdle
     else:
-      if abs(PRight - R_Target) < 300:
+      if abs(PRight - R_Target) < 400:
         pwm_norm = 28
       else:
         pwm_norm = pwm_max * 0.6
         
       #if C_Mode == cModeBack:
       #  pwm_norm *= -1.3
-        
-      if pwm_R < pwm_norm:
-        pwm_R += pwm_accel
-      elif pwm_R > pwm_norm:
-        pwm_R -= pwm_accel
       
-      error = error_function(PLeft, PRight)  
-      correction = (error * 0.36) 
-      if C_Mode in {cModeStraight, cModeBack}:
-        pwm_L = pwm_L + correction
-      else:
-        pwm_L = -pwm_L + correction
+      if time.time() > pwm_correction_time:  
+        pwm_correction_time = time.time() + 0.1
+        
+        pwm_accel_L = False
+        if C_Mode in {cModeStraight}:
+          if pwm_R < pwm_norm:
+            pwm_R += pwm_accel
+            pwm_accel_L = True
+          elif pwm_R > pwm_norm:
+            pwm_R -= pwm_accel
+            pwm_accel_L = True
+        
+          if pwm_accel_L:
+            if pwm_L < pwm_norm:
+              pwm_L += pwm_accel
+            elif pwm_L > pwm_norm:
+              pwm_L -= pwm_accel
+        
+        elif C_Mode in {cModeBack}:
+          if pwm_R < -pwm_norm:
+            pwm_R += pwm_accel
+            pwm_accel_L = True
+          elif pwm_R > -pwm_norm:
+            pwm_R -= pwm_accel
+            pwm_accel_L = True
+          
+          if pwm_accel_L:
+            if pwm_L < -pwm_norm:
+              pwm_L += pwm_accel
+            elif pwm_L > -pwm_norm:
+              pwm_L -= pwm_accel
+        else:
+          if pwm_R < pwm_norm:
+            pwm_R += pwm_accel
+            pwm_accel_L = True
+          elif pwm_R > pwm_norm:
+            pwm_R -= pwm_accel
+            pwm_accel_L = True
+        
+          if pwm_accel_L:
+            if pwm_L < -pwm_norm:
+              pwm_L += pwm_accel
+            elif pwm_L > -pwm_norm:
+              pwm_L -= pwm_accel
+
+        #if pwm_accel_L:        
+        #  print(pwm_R, pwm_L, pwm_norm)
+          
+        error = error_function(PLeft, PRight)  
+        correction = (error * 0.3) 
+        if C_Mode in {cModeStraight, cModeBack}:
+          pwm_L = pwm_L + correction - pwm_last_correction
+        else:
+          pwm_L = pwm_L + correction - pwm_last_correction
+          
+        pwm_last_correction = correction * 0.96
+        
+        #if error > 0 and pwm_L < 20 and pwm_L > 0:
+        #  pwm_L = 20
+        #elif error < 0 and pwm_L > -20 and pwm_L < 0:
+        #  pwm_L = -20
+          
+        if pwm_L < -pwm_max:
+          pwm_L = -pwm_max
+        elif pwm_L > pwm_max:
+          pwm_L = pwm_max
+          
+        #print(f'{pwm_R:.0f} {pwm_L:.0f} {radians_to_deg(robo_orientation):.2f} {PRight} {PLeft} {PRight-PLeft}')
       
-      #if error > 0 and pwm_L < 20 and pwm_L > 0:
-      #  pwm_L = 20
-      #elif error < 0 and pwm_L > -20 and pwm_L < 0:
-      #  pwm_L = -20
-        
-      if pwm_L < -pwm_max:
-        pwm_L = -pwm_max
-      elif pwm_L > pwm_max:
-        pwm_L = pwm_max
-        
-      #print(f'{pwm_R:.0f} {pwm_L:.0f} {radians_to_deg(robo_orientation):.2f} {PRight} {PLeft} {PRight-PLeft}')
-    
-      robo_pwm(pwm_R, pwm_L)
+        robo_pwm(pwm_R, pwm_L)
 
       
     
@@ -849,7 +896,7 @@ def btnStopClick():
   robo_drive(0, -1)        
 
 def btnGoClick():
-  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L
+  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L, pwm_last_correction
   global robo_state
   
   R_L_Offset = PRight - PLeft - error_function(PLeft, PRight)
@@ -859,11 +906,12 @@ def btnGoClick():
   
   pwm_R = pwm_initial
   pwm_L = pwm_initial
+  pwm_last_correction = 0
   reset_check_stuck()
   robo_state = rCloseLoop
 
 def btnSpinClick():
-  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L
+  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L, pwm_last_correction
   global robo_state
   
   R_L_Offset = PRight + PLeft + error_function(PLeft, PRight)
@@ -873,11 +921,12 @@ def btnSpinClick():
   
   pwm_R = pwm_initial
   pwm_L = -pwm_initial
+  pwm_last_correction = 0
   reset_check_stuck()
   robo_state = rCloseLoop
   
 def btnBackClick():
-  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L
+  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L, pwm_last_correction
   global robo_state
   
   R_L_Offset = PRight - PLeft - error_function(PLeft, PRight)
@@ -885,14 +934,14 @@ def btnBackClick():
   R_Target = PRight - (CPR * 1)
   L_Target = PLeft - (CPR * 1)
   
-  if (pwm_R > 0):
-    pwm_R = -pwm_initial
-    pwm_L = -pwm_initial
+  pwm_R = -pwm_initial
+  pwm_L = -pwm_initial
+  pwm_last_correction = 0
   reset_check_stuck()
   robo_state = rCloseLoop
 
 def btnExploreClick():
-  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L
+  global C_Mode, R_L_Offset, R_Target, L_Target, pwm_R, pwm_L, pwm_last_correction
   global robo_state, robo_explore, explore_actions
   
   R_L_Offset = PRight - PLeft - error_function(PLeft, PRight)
@@ -902,6 +951,7 @@ def btnExploreClick():
   
   pwm_R = pwm_initial
   pwm_L = pwm_initial
+  pwm_last_correction = 0
   reset_check_stuck()
   robo_state = rCloseLoop
   explore_actions = []
