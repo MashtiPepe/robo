@@ -65,7 +65,7 @@ pwm_L = 0
 pwm_norm = 70
 pwm_max = 120
 pwm_accel = 1
-pwm_initial = 40
+pwm_initial = 45
 
 bumper = [0] * 6
 crash = [0] * 2
@@ -538,9 +538,9 @@ def act_on_data(data):
       error = error_function(PLeft, PRight)  
       correction = (error * 0.36) 
       if C_Mode in {cModeStraight, cModeBack}:
-        pwm_L = pwm_R + correction
+        pwm_L = pwm_L + correction
       else:
-        pwm_L = -pwm_R + correction
+        pwm_L = -pwm_L + correction
       
       #if error > 0 and pwm_L < 20 and pwm_L > 0:
       #  pwm_L = 20
@@ -858,7 +858,7 @@ def btnGoClick():
   L_Target += (CPR * 10)
   
   pwm_R = pwm_initial
-  pwm_L = pwm_initial+15
+  pwm_L = pwm_initial
   reset_check_stuck()
   robo_state = rCloseLoop
 
