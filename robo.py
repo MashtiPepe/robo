@@ -65,7 +65,7 @@ pwm_L = 0
 pwm_norm = 70
 pwm_max = 120
 pwm_accel = 1
-pwm_initial = 45
+pwm_initial = 40
 
 bumper = [0] * 6
 crash = [0] * 2
@@ -858,7 +858,7 @@ def btnGoClick():
   L_Target += (CPR * 10)
   
   pwm_R = pwm_initial
-  pwm_L = pwm_initial+10
+  pwm_L = pwm_initial+15
   reset_check_stuck()
   robo_state = rCloseLoop
 
