@@ -858,7 +858,7 @@ def btnGoClick():
   L_Target += (CPR * 10)
   
   pwm_R = pwm_initial
-  pwm_L = pwm_initial
+  pwm_L = pwm_initial+10
   reset_check_stuck()
   robo_state = rCloseLoop
 
