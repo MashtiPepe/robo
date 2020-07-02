@@ -65,6 +65,7 @@ pwm_L = 0
 pwm_norm = 70
 pwm_max = 120
 pwm_accel = 1
+pwm_initial = 45
 
 bumper = [0] * 6
 crash = [0] * 2
@@ -129,10 +130,10 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   #how far did one go more than the other?
   #double_angle = r_travel - l_travel
   
-  if C_Mode != cModeSpin:
-    robo_theta = (r_travel - l_travel) * 2 / counts_180 * math.pi
-  else:
-    robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
+  #if C_Mode != cModeSpin:
+  #  robo_theta = (r_travel - l_travel) * 2 / counts_180 * math.pi
+  #else:
+  robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
   
   #r_travel = abs(r_travel)
   #l_travel = abs(l_travel)
@@ -526,8 +527,8 @@ def act_on_data(data):
       else:
         pwm_norm = pwm_max * 0.6
         
-      if C_Mode == cModeBack:
-        pwm_norm *= -1.3
+      #if C_Mode == cModeBack:
+      #  pwm_norm *= -1.3
         
       if pwm_R < pwm_norm:
         pwm_R += pwm_accel
@@ -586,7 +587,7 @@ def robo_sing():
   robo_send([0x8c, 0x03, 0x01, 0x40, 0x10, 0x8d, 0x03, 0x40, 0x10]) 
   
 def robo_drive(speed, radius):
-  print(f'drive {speed}mm/sec {radius}mm')
+  #print(f'drive {speed}mm/sec {radius}mm')
   robo_send([137] + robo_num(speed) + robo_num(radius))
   
 def robo_reset():
@@ -856,8 +857,8 @@ def btnGoClick():
   R_Target += (CPR * 10)
   L_Target += (CPR * 10)
   
-  pwm_R = 25
-  pwm_L = 25
+  pwm_R = pwm_initial
+  pwm_L = pwm_initial
   reset_check_stuck()
   robo_state = rCloseLoop
 
@@ -870,8 +871,8 @@ def btnSpinClick():
   R_Target += counts_180  #815
   L_Target -= counts_180  #815
   
-  pwm_R = 25
-  pwm_L = -25
+  pwm_R = pwm_initial
+  pwm_L = -pwm_initial
   reset_check_stuck()
   robo_state = rCloseLoop
   
@@ -885,8 +886,8 @@ def btnBackClick():
   L_Target = PLeft - (CPR * 1)
   
   if (pwm_R > 0):
-    pwm_R = -25
-    pwm_L = -25
+    pwm_R = -pwm_initial
+    pwm_L = -pwm_initial
   reset_check_stuck()
   robo_state = rCloseLoop
 
@@ -899,8 +900,8 @@ def btnExploreClick():
   R_Target += counts_limit
   L_Target += counts_limit
   
-  pwm_R = 25
-  pwm_L = 25
+  pwm_R = pwm_initial
+  pwm_L = pwm_initial
   reset_check_stuck()
   robo_state = rCloseLoop
   explore_actions = []
