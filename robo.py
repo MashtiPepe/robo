@@ -577,11 +577,12 @@ def act_on_data(data):
             elif pwm_L > -pwm_norm:
               pwm_L -= pwm_accel
 
-        #if pwm_accel_L:        
-        #  print(pwm_R, pwm_L, pwm_norm)
-          
         error = error_function(PLeft, PRight)  
-        correction = (error * 0.3) 
+        correction = (error * 0.1) 
+        
+        #if pwm_accel_L:        
+        #  print(f'{pwm_R:.1f}, {pwm_L:.1f}, {PRight}, {PLeft}, {correction-pwm_last_correction:.3f}')
+          
         if C_Mode in {cModeStraight, cModeBack}:
           pwm_L = pwm_L + correction - pwm_last_correction
         else:
@@ -858,7 +859,7 @@ def draw_robo():
     robo_draw_info = 1
     robo_draw_color = 'black'
   except:
-    print('exception')
+    print('robo off canvas')
     
   
   size = 40
