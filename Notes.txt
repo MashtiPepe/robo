@@ -1,0 +1,48 @@
+**********Known Issues:
+
+The encoder feedback is not quadrature.  If the robot bumps into anything and the wheel turns, we
+loose position.  Also, if one wheel turns and the other does not, then the radius of the turn
+will be different than when both wheels turn.  These factors contibute to slow drift of the known
+orientation of the robot.
+
+
+**********Operation:
+
+- Always plug a monitor to the Jetson before powering it up.
+  This will help define the screen size for later access via
+  VNC
+  
+- Power up the Jetson with the battery pack
+
+- Connect the Jetson to your Wifi
+  once connected, note the IP address of the Jetson
+  you can get the IP address using the following command
+  ifconfig
+  
+- Open a terminal on the Jetson and type the following command
+  ~/openvino
+  this will enable VNC access
+  
+- Connect the robot cord to a USB port on the Jetson
+
+- Open another terminal on the Jetson
+  type the following command
+  cd robo
+  this will change the directory to robo
+  
+- Optionally, download the latest program by typing the following:
+  git pull origin master
+  
+- Execute the robo program by typing this command
+  sudo python3 robo.py
+  when asked for password type
+  no
+  Jetson password is no
+  
+- unplug the monitor from the Jetson
+
+- Connect to the Jetson using VNC
+
+- Place the robot on the floor and 
+  click the "explore" button.
+  The robot will explore a radius of 2.5 meters 

@@ -1,7 +1,10 @@
+#
+#
+# Developed at Tisfoon by Amir Pirzadeh
+#
 import serial
 import time
 import threading
-#import keyboard
 import os
 import math
 import tkinter
@@ -10,14 +13,6 @@ import numpy as np
 rIdle             = 'idle'
 rClearFeedback    = 'clear feedback'
 rWaitCF           = 'wait clear feedback'
-rForward          = 'forward'
-rWaitForward      = 'wait forward'
-rFaceBackward     = 'face backward'
-rWaitFaceBackward = 'wait face backward'
-rGoBack           = 'go back'
-rWaitGoBack       = 'wait go back'
-rFaceForward      = 'face forward'
-rWaitFaceForward  = 'wait face forward'
 rCloseLoop        = 'close loop'
 
 #world representation
@@ -38,7 +33,6 @@ robo_vector_pol = [0, 0]
 robo_vector_xy = [0, 0]
 robo_orientation = 0
 robo_theta = 0
-robo_last_theta = 0
 last_PLeft = 0
 last_PRight = 0
 old_pleft = 0
@@ -95,7 +89,7 @@ C_Mode = cModeStraight
 #
 rw = 36
 CPR = 508.8
-D = 232   #217 inside dim, 232 center dim, 247 outside dim
+D = 231.5   #217 inside dim, 232 center dim, 247 outside dim
 R = D/2
 pi_rw = math.pi * rw
 pi_rw_div_CPR = pi_rw / CPR
@@ -105,12 +99,8 @@ radian_in_pos = two_pi / 100
 
 radian_to_degrees = 180 / math.pi
 
-#counts_180 = this is 843   R * CPR / 2 / rw
-#counts_180 = 815
-#counts_180 = 825
-#counts_180 = 791   # the closest yet.
-#counts_180 = 821.3
-counts_180=816.2
+counts_180 = R * CPR / 2 / rw
+print('counts in 180 degrees: ', counts_180)
 
 #alignment_error = 0  #5.7397e-5   #radians per mm.
 
@@ -125,10 +115,10 @@ def polar_r(PLeft, PRight):
 #range is 0 to 2pi
 #orientation in radians                
 def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
-  global robo_orientation, robo_theta, robo_last_theta
+  global robo_orientation, robo_theta
   
-  l_travel = PLeft - last_PLeft
-  r_travel = PRight - last_PRight
+  #l_travel = PLeft - last_PLeft
+  #r_travel = PRight - last_PRight
   
   #how far did one go more than the other?
   #double_angle = r_travel - l_travel
@@ -136,7 +126,8 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   #if C_Mode != cModeSpin:
   #  robo_theta = (r_travel - l_travel) * 2 / counts_180 * math.pi
   #else:
-  #robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
+  #  robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
+  
   robo_theta = (PRight - PLeft) / 2 / counts_180 * math.pi
   
   #r_travel = abs(r_travel)
@@ -156,14 +147,13 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
     robo_theta += two_pi
   
   #print(PRight - PLeft)  
-  robo_orientation = robo_theta  #(robo_theta - robo_last_theta)
+  robo_orientation = robo_theta  
                                 
   while robo_orientation > two_pi:
     robo_orientation -= two_pi
   while robo_orientation < 0:
     robo_orientation += two_pi
       
-  robo_last_theta = robo_theta
   
   
 def radians_to_deg(theta):
@@ -309,7 +299,7 @@ def rdata_enc_feedback(data):
   global last_PLeft, last_PRight
   global old_pleft, old_pright
   global R_Target, L_Target, R_L_Offset
-  global robo_orientation, robo_theta, robo_last_theta
+  global robo_orientation, robo_theta
   global grid_world, robo_explore, explore_actions
   
   robo_left_enc = int.from_bytes(data[0:2], byteorder='big', signed=True)
@@ -330,7 +320,6 @@ def rdata_enc_feedback(data):
     robo_vector_pol = [0, 0]
     robo_orientation = 0
     robo_theta = 0
-    robo_last_theta = 0
     grid_world[::] = 0
     robo_explore = False
     explore_actions = []
@@ -482,43 +471,7 @@ def act_on_data(data):
   
   if robo_state == rClearFeedback:
     robo_state = rWaitCF
-    
-  if robo_state == rForward:
-    robo_state = rWaitForward
-    robo_drive(50, 32767)
-    
-  if robo_state == rWaitForward:
-    if robo_vector_xy[0] >= 500:
-      robo_drive(0, 0)
-      robo_state = rFaceBackward
-      
-  if robo_state == rFaceBackward:
-    robo_state = rWaitFaceBackward
-    robo_drive(50, 1)
-    
-  if robo_state == rWaitFaceBackward:
-    if abs(robo_orientation - math.pi) <= radian_in_pos:
-      robo_drive(0, 0)
-      robo_state = rGoBack
-    
-  if robo_state == rGoBack:
-    robo_state = rWaitGoBack
-    robo_drive(50, 32767)
-  
-  if robo_state == rWaitGoBack:
-    if robo_vector_xy[0] <= 0:
-      robo_drive(0, 0)
-      robo_state = rFaceForward
-      
-  if robo_state == rFaceForward:
-    robo_state = rWaitFaceForward
-    robo_drive(50, -1)
-    
-  if robo_state == rWaitFaceForward:
-    if abs(robo_orientation - 0) <= radian_in_pos or abs(robo_orientation - two_pi) <= radian_in_pos:
-      robo_drive(0, 0)
-      robo_state = rIdle
-      
+         
   if robo_state == rCloseLoop:
     if abs(PRight - R_Target) < 5:
       #print('out of close loop')
@@ -663,14 +616,6 @@ def robo_stream(packet):
     robo_send([148, 1, packet]);
     robo_stream_enabled = True
   
-def robo_run():
-  global robo_state
-  
-  print('begin run')
-  if robo_state == rIdle:
-    robo_sing()
-    robo_state = rForward
-    
 def error_function(PLeft, PRight):
   if C_Mode in {cModeStraight, cModeBack}:
     return PRight - PLeft - R_L_Offset
@@ -715,18 +660,7 @@ def robo_process():
             check_something_wrong = True
           robo_state = rClearFeedback
       
-      if 'b' in keysdown or key == 'b':     #begin the program
-        keysdown = {}
-        robo_run()
-        key = ''
-      #elif keyCode == 'r':   #reset
-      #  keysdown = {}
-      #  robo_reset()
-      #elif keyboard.is_pressed('s') or key == 's':   #beep
-      #  keysdown = {}
-      #  robo_sing()
-      #  key = ''
-      elif 't' in keysdown:   #turn clockwise
+      if 't' in keysdown:   #turn clockwise
         keysdown = {}
         robo_drive(50, -1)
       elif 'g' in keysdown:   #straight
