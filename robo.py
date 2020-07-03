@@ -89,7 +89,7 @@ C_Mode = cModeStraight
 #
 rw = 36
 CPR = 508.8
-D = 231.5   #217 inside dim, 232 center dim, 247 outside dim
+D = 231   #217 inside dim, 231 center dim, 247 outside dim
 R = D/2
 pi_rw = math.pi * rw
 pi_rw_div_CPR = pi_rw / CPR
