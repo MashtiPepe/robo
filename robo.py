@@ -109,7 +109,8 @@ radian_to_degrees = 180 / math.pi
 #counts_180 = 815
 #counts_180 = 825
 #counts_180 = 791   # the closest yet.
-counts_180 = 821.3
+#counts_180 = 821.3
+counts_180=830
 
 #alignment_error = 0  #5.7397e-5   #radians per mm.
 
@@ -578,17 +579,17 @@ def act_on_data(data):
               pwm_L -= pwm_accel
 
         error = error_function(PLeft, PRight)  
-        correction = (error * 0.1) 
+        correction = (error * 0.8) 
         
         #if pwm_accel_L:        
-        #  print(f'{pwm_R:.1f}, {pwm_L:.1f}, {PRight}, {PLeft}, {correction-pwm_last_correction:.3f}')
+        #  print(f'{pwm_R:.1f}, {pwm_L:.1f}, {PRight}, {PLeft}, {PRight-PLeft}')
           
         if C_Mode in {cModeStraight, cModeBack}:
           pwm_L = pwm_L + correction - pwm_last_correction
         else:
           pwm_L = pwm_L + correction - pwm_last_correction
           
-        pwm_last_correction = correction * 0.96
+        pwm_last_correction = correction * 0.92
         
         #if error > 0 and pwm_L < 20 and pwm_L > 0:
         #  pwm_L = 20
@@ -982,7 +983,7 @@ if ser_port:
   _root_window = tkinter.Tk()
   #_root_window.protocol('WM_DELETE_WINDOW', _destroy_window)
   _root_window.geometry('505x900')
-  _root_window.title('iRobot')
+  _root_window.title('Tisfoon')
   _root_window.resizable(1, 1)
   _root_window.bind( "<KeyPress>", _keypress )
   #_canvas = tkinter.Canvas(_root_window, width=400, height=400)
