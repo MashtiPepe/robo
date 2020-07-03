@@ -136,7 +136,8 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   #if C_Mode != cModeSpin:
   #  robo_theta = (r_travel - l_travel) * 2 / counts_180 * math.pi
   #else:
-  robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
+  #robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
+  robo_theta = (P_Right - P_Left) / 2 / counts_180 * math.pi
   
   #r_travel = abs(r_travel)
   #l_travel = abs(l_travel)
