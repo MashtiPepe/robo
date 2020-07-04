@@ -113,32 +113,32 @@ def polar_r(PLeft, PRight):
   return (PLeft + PRight) * pi_rw_div_CPR
   
 #range is 0 to 2pi
-#orientation in radians                
+#orientation in radians
+#
+# when the signs of r_travel and l_travel are the same,
+# robot will orient around the whole diameter for the 
+# difference
+#
+# when the signs of r_travel and l_travel are different,
+# robot will turn about its center for the common time
+# and about the whole diameter for the difference.
+# 
 def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   global robo_orientation, robo_theta
   
-  #l_travel = PLeft - last_PLeft
-  #r_travel = PRight - last_PRight
+  l_travel = PLeft - last_PLeft
+  r_travel = PRight - last_PRight
   
   #how far did one go more than the other?
   #double_angle = r_travel - l_travel
   
-  #if C_Mode != cModeSpin:
-  #  robo_theta = (r_travel - l_travel) * 2 / counts_180 * math.pi
-  #else:
-  #  robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
-  
-  robo_theta = (PRight - PLeft) / 2 / counts_180 * math.pi
-  
-  #r_travel = abs(r_travel)
-  #l_travel = abs(l_travel)
-  
-  #if C_Mode != cModeSpin:
-  #  if (l_travel < 1 and r_travel > 0) or (r_travel < 1 and l_travel > 0):
-  #    robo_theta *= 2
-  #    print('double angle', r_travel, l_travel)
-  #  elif (l_travel > 0) or (r_travel > 0):
-  #    print(r_travel, l_travel)
+  if l_travel * r_travel >= 0:   #traveling straight spin around entire diameter
+    robo_theta = (r_travel - l_travel) / counts_180 * math.pi
+  else:
+    robo_theta = (r_travel + l_travel) / counts_180 * math.pi
+    robo_theta += r_travel / counts_180 * math.pi      #in effect 2 x PRight
+    
+  #print (l_travel, r_travel, robo_theta)
   
   
   while robo_theta > two_pi:
@@ -147,7 +147,7 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
     robo_theta += two_pi
   
   #print(PRight - PLeft)  
-  robo_orientation = robo_theta  
+  robo_orientation += robo_theta  
                                 
   while robo_orientation > two_pi:
     robo_orientation -= two_pi
@@ -812,7 +812,7 @@ def update_info():
     info_status.set(f'{robo_state}  {C_Mode}  {explore_actions}')
     info_position.set(f'R: {PRight}->{R_Target:.0f}  L: {PLeft}  Diff: {PRight - PLeft}')
     info_pwm.set(f'pwm {pwm_R:.0f} {pwm_L:.0f} {error_function(PLeft, PRight)} R_L_Offset: {R_L_Offset}')
-    info_xy.set(f'x,y,t {robo_vector_xy[0]:.1f} {robo_vector_xy[1]:.1f} {robo_theta*radian_to_degrees:.1f} \n')
+    info_xy.set(f'x,y  t,o {robo_vector_xy[0]:.1f} {robo_vector_xy[1]:.1f}    {robo_theta*radian_to_degrees:.1f} {robo_orientation*radian_to_degrees:.1f} \n')
     info_bumper.set(f' bumper 0 {bumper[0]} \n bumper 1 {bumper[1]} \n bumper 2 {bumper[2]} \n bumper 3 {bumper[3]} \n bumper 4 {bumper[4]} \n bumper 5 {bumper[5]}')
     info_current.set(f' motor current 0 {motor_current[0]} \n motor current 1 {motor_current[1]} ')
     info_cliff.set(f' cliff 0 {cliff[0]} \n cliff 1 {cliff[1]} \n cliff 2 {cliff[2]} \n cliff 3 {cliff[3]} ')
