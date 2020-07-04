@@ -9,11 +9,15 @@ import os
 import math
 import tkinter
 import numpy as np
+import pickle
 
 rIdle             = 'idle'
 rClearFeedback    = 'clear feedback'
 rWaitCF           = 'wait clear feedback'
 rCloseLoop        = 'close loop'
+
+#simulation data
+sim_data = np.zeros((0, 0), dtype=np.int)
 
 #world representation
 world_size = 500
@@ -301,6 +305,7 @@ def rdata_enc_feedback(data):
   global R_Target, L_Target, R_L_Offset
   global robo_orientation, robo_theta
   global grid_world, robo_explore, explore_actions
+  global sim_data
   
   robo_left_enc = int.from_bytes(data[0:2], byteorder='big', signed=True)
   robo_right_enc = int.from_bytes(data[2:4], byteorder='big', signed=True)
@@ -320,6 +325,7 @@ def rdata_enc_feedback(data):
     robo_vector_pol = [0, 0]
     robo_orientation = 0
     robo_theta = 0
+    sim_data = np.zeros((0, 0), dtype=np.int)
     grid_world[::] = 0
     robo_explore = False
     explore_actions = []
@@ -344,6 +350,9 @@ def rdata_enc_feedback(data):
   
   last_left_enc = robo_left_enc
   last_right_enc = robo_right_enc
+  
+  if (PLeft != last_PLeft) or (PRight != last_PRight):
+    sim_data = np.append(sim_data, [PLeft, PRight])
   
   robo_calc_pos(PLeft, PRight)
 
@@ -898,6 +907,14 @@ def btnClearClick():
   global robo_state
   
   robo_state = rClearFeedback
+  
+def btnSaveDataClick():
+  try:
+    with open('sim_data.txt', 'wb') as fp:
+      pickle.dump(sim_data, fp)
+  except:
+    print('error saving data ')
+  
 
 #main routine
 #if connected to robot
@@ -938,13 +955,15 @@ if ser_port:
   btnBack = tkinter.Button(_frame_right, text="Backup", command=btnBackClick)
   btnExplore = tkinter.Button(_frame_right, text="Explore", command=btnExploreClick)
   btnClear = tkinter.Button(_frame_right, text="Clear", command=btnClearClick)
+  btnSaveData = tkinter.Button(_frame_right, text="Save Data", command=btnSaveDataClick)
   
   btnStop.grid(row=0, column=0, sticky="we")
   btnGo.grid(row=1, column=0, sticky="we")
   btnSpin.grid(row=2, column=0, sticky="we")
   btnBack.grid(row=3, column=0, sticky="we")
   btnExplore.grid(row=4, column=0, sticky="we")
-  btnClear.grid(row=5, column=0, sticky="we")
+  btnSaveData.grid(row=5, column=0, sticky="we")
+  btnClear.grid(row=6, column=0, sticky="we")
   
   info_status = tkinter.StringVar(_frame_left)
   info_position = tkinter.StringVar(_frame_left)
