@@ -136,7 +136,7 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
     robo_theta = (r_travel - l_travel) * 2 / counts_180 * math.pi
   else:
     #robo_theta = (r_travel + l_travel) * 2 / counts_180 * math.pi  #traveling straight
-    robo_theta += (r_travel - l_travel) / 2 / counts_180 * math.pi      #in effect 2 x PRight spinning
+    robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi      #in effect 2 x PRight spinning
     
   #print (l_travel, r_travel, robo_theta)
   
