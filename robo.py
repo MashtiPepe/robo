@@ -62,9 +62,9 @@ check_stuck_time = 0
 pwm_R = 0
 pwm_L = 0
 pwm_norm = 70
-pwm_max = 120
+pwm_max = 150
 pwm_accel = 0.25
-pwm_initial = 55
+pwm_initial = 60
 pwm_last_correction = 0
 pwm_correction_time = 0
 
