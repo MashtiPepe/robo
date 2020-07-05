@@ -804,19 +804,16 @@ def doSimulation():
   trials = 50000
   while (trials > 0):
     try_rw = random.uniform(35, 36)
-    try_D = 4 * try_rw * random.uniform(799,805) / CPR  #random.uniform(215,250)
+    try_D = 4 * try_rw * random.uniform(790, 805) / CPR  #random.uniform(215,250)
     try_CPR = 508.8 #random.uniform(500, 517.6)
     
     xx, yy, oo = doOneSim(try_rw, try_CPR, try_D)
     
     #print(f'rw:{try_rw:.1f} D:{try_D:.1f} CPR:{try_CPR:.1f}   x,y,o {xx:.1f} {yy:.1f}    {oo:.1f} \n')
     
-    dx = abs(xx - 47)  
-    dy = abs(yy + 415)
-    if oo > 180:
-      do = 0#abs(oo - 360)
-    else:
-      do = 0#abs(oo - 0)
+    dx = 0#abs(xx - 292)  
+    dy = 0#abs(yy - 19)
+    do = abs(oo - 320)*5
     if (dx+dy+do < best_diff) or best_first:
       best_diff = dx+dy+do
       best_rw = try_rw
