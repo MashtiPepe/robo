@@ -92,9 +92,9 @@ C_Mode = cModeStraight
 # r (travel distance mm) = (PLeft + PRight) / 2   * (2 pi rw) / CPR
 # theta (orientation range 0 to 2 pi) = (PRight - PRight) / (D / 2)
 #
-rw = 36
+rw = 35.066
 CPR = 508.8
-D = 226.8   #230   #217 inside dim, 231 center dim, 247 outside dim
+D = 221.502   #230   #217 inside dim, 231 center dim, 247 outside dim
 R = D/2
 pi_rw = math.pi * rw
 pi_rw_div_CPR = pi_rw / CPR
@@ -803,16 +803,16 @@ def doSimulation():
   
   trials = 50000
   while (trials > 0):
-    try_rw = random.uniform(32, 36.5)
-    try_D = 4 * try_rw * random.uniform(799,817) / CPR  #random.uniform(215,250)
+    try_rw = random.uniform(35, 36)
+    try_D = 4 * try_rw * random.uniform(799,805) / CPR  #random.uniform(215,250)
     try_CPR = 508.8 #random.uniform(500, 517.6)
     
     xx, yy, oo = doOneSim(try_rw, try_CPR, try_D)
     
     #print(f'rw:{try_rw:.1f} D:{try_D:.1f} CPR:{try_CPR:.1f}   x,y,o {xx:.1f} {yy:.1f}    {oo:.1f} \n')
     
-    dx = abs(xx + 100)  
-    dy = abs(yy + 153)
+    dx = abs(xx - 47)  
+    dy = abs(yy + 415)
     if oo > 180:
       do = 0#abs(oo - 360)
     else:
@@ -826,11 +826,11 @@ def doSimulation():
       best_x = xx
       best_y = yy
       best_o = oo
-      print(f'best {best_rw:.1f} {best_D:.1f} {best_CPR:.1f}, {best_x:.1f}, {best_y:.1f}, {best_o:.1f}  {counts_180:.2f}')  
+      print(f'best {best_rw:.3f} {best_D:.3f} {best_CPR:.1f}, {best_x:.1f}, {best_y:.1f}, {best_o:.1f}  {counts_180:.2f}')  
       
     trials -= 1
   
-  print(f'best {best_rw:.1f} {best_D:.1f} {best_CPR:.1f}, {best_x:.1f}, {best_y:.1f}, {best_o:.1f}')  
+  print(f'best {best_rw:.3f} {best_D:.3f} {best_CPR:.1f}, {best_x:.1f}, {best_y:.1f}, {best_o:.1f}')  
 
 
   
