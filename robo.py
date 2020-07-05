@@ -10,6 +10,7 @@ import math
 import tkinter
 import numpy as np
 import pickle
+import random
 
 rIdle             = 'idle'
 rClearFeedback    = 'clear feedback'
@@ -140,7 +141,7 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
     robo_theta = (r_travel - l_travel) / counts_180 * math.pi
   else:
     robo_theta = (r_travel + l_travel) / counts_180 * math.pi  #traveling straight
-    robo_theta += (r_travel - l_travel) / 2 / counts_180 * math.pi      #in effect 2 x PRight spinning
+    robo_theta += -l_travel / counts_180 * math.pi      #in effect 2 x PRight spinning
     
   #print (l_travel, r_travel, robo_theta)
   
@@ -297,6 +298,28 @@ def robo_safety():
     if len(explore_actions) == 0 and robo_explore:
       explore_actions += [cModeSpin, cModeDummy]
       btnBackClick()
+      
+def init_vars():
+  global robo_state, last_left_enc, last_right_enc, PLeft, PRight, robo_vector_xy, robo_vector_pol
+  global last_PLeft, last_PRight
+  global old_pleft, old_pright
+  global R_Target, L_Target, R_L_Offset
+  global robo_orientation, robo_theta
+  
+  PLeft = 0
+  PRight = 0
+  R_Target = 0
+  L_Target = 0
+  R_L_Offset = 0
+  last_PLeft = 0
+  last_PRight = 0
+  old_pleft = 0
+  old_pright = 0
+  robo_vector_xy = [0, 0]
+  robo_vector_pol = [0, 0]
+  robo_orientation = 0
+  robo_theta = 0
+
 
 def rdata_enc_feedback(data):
   global robo_state, last_left_enc, last_right_enc, PLeft, PRight, robo_vector_xy, robo_vector_pol
@@ -726,8 +749,79 @@ def check_stuck():
     check_stuck_time = time.time() + 1.3
 
   return res
-    
   
+def doOneSim(this_rw, this_CPR, this_D):
+  global rw, CPR, D, counts_180, pi_rw_div_CPR
+  
+  init_vars()
+  
+  D = this_D
+  rw = this_rw
+  CPR = this_CPR
+  
+  R = D / 2    
+  counts_180 = R * CPR / 2 / rw
+  pi_rw_div_CPR = math.pi * rw / CPR
+  #print(counts_180, pi_rw_div_CPR)
+  
+  i = 0
+  while i < len(sim_data):
+    left_pos = sim_data[i]
+    right_pos = sim_data[i+1]
+    i += 2    
+    robo_calc_pos(left_pos, right_pos)
+    
+  return robo_vector_xy[0], robo_vector_xy[1], robo_orientation * radian_to_degrees
+    
+
+def doSimulation():
+  global sim_data
+  global rw, CPR, D, counts_180, pi_rw_div_CPR
+  
+  #open the pickled file  
+  try:
+    with open('sim_data.txt', 'rb') as fp:
+      sim_data = pickle.load(fp)
+  except:
+      print('simulation data not found')
+      exit()
+  
+  print('simulation...')    
+  
+  best_diff = 0
+  best_first = True
+  best_x = 0
+  best_y = 0
+  best_o = 0
+  
+  trials = 50000
+  while (trials > 0):
+    try_rw = random.uniform(32, 36.5)
+    try_D = 4 * try_rw * random.uniform(812.6,812.7) / CPR  #random.uniform(215,250)
+    try_CPR = 508.8 #random.uniform(500, 517.6)
+    
+    xx, yy, oo = doOneSim(try_rw, try_CPR, try_D)
+    
+    #print(f'rw:{try_rw:.1f} D:{try_D:.1f} CPR:{try_CPR:.1f}   x,y,o {xx:.1f} {yy:.1f}    {oo:.1f} \n')
+    
+    dx = abs(xx - 95.35)  
+    dy = abs(yy + 260.25)
+    do = 0#abs(oo - 279.2)*7
+    if (dx+dy+do < best_diff) or best_first:
+      best_diff = dx+dy+do
+      best_rw = try_rw
+      best_D = try_D
+      best_CPR = try_CPR
+      best_first = False
+      best_x = xx
+      best_y = yy
+      best_o = oo
+      print(f'best {best_rw:.1f} {best_D:.1f} {best_CPR:.1f}, {best_x:.1f}, {best_y:.1f}, {best_o:.1f}  {counts_180:.2f}')  
+      
+    trials -= 1
+  
+  print(f'best {best_rw:.1f} {best_D:.1f} {best_CPR:.1f}, {best_x:.1f}, {best_y:.1f}, {best_o:.1f}')  
+
 
   
 try:
@@ -743,6 +837,7 @@ try:
 except:
   ser_port = False
   print('Robo not connected')
+  doSimulation()
 
 def formatColor(r, g, b):
     return '#%02x%02x%02x' % (int(r * 255), int(g * 255), int(b * 255))
