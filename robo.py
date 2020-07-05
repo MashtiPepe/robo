@@ -94,7 +94,7 @@ C_Mode = cModeStraight
 #
 rw = 36
 CPR = 508.8
-D = 230   #217 inside dim, 231 center dim, 247 outside dim
+D = 226.8   #230   #217 inside dim, 231 center dim, 247 outside dim
 R = D/2
 pi_rw = math.pi * rw
 pi_rw_div_CPR = pi_rw / CPR
@@ -140,11 +140,14 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   if l_travel * r_travel >= 0:   #traveling straight spin around entire diameter
     robo_theta = (r_travel - l_travel) / counts_180 * math.pi
   else:
-    robo_theta = (r_travel + l_travel) / counts_180 * math.pi  #traveling straight
-    if r_travel > l_travel:
-      robo_theta += -l_travel / counts_180 * math.pi      #in effect 2 x PRight spinning
+    if True:
+      robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
     else:
-      robo_theta += r_travel / counts_180 * math.pi      #in effect 2 x PRight spinning
+      robo_theta = (r_travel + l_travel) / counts_180 * math.pi  #traveling straight
+      if abs(r_travel) > abs(l_travel):
+        robo_theta += -l_travel / counts_180 * math.pi      #in effect 2 x PRight spinning
+      else:
+        robo_theta += r_travel / counts_180 * math.pi      #in effect 2 x PRight spinning
     
     
   #print (l_travel, r_travel, robo_theta)
@@ -801,16 +804,19 @@ def doSimulation():
   trials = 50000
   while (trials > 0):
     try_rw = random.uniform(32, 36.5)
-    try_D = 4 * try_rw * random.uniform(812.6,812.7) / CPR  #random.uniform(215,250)
+    try_D = 4 * try_rw * random.uniform(799,817) / CPR  #random.uniform(215,250)
     try_CPR = 508.8 #random.uniform(500, 517.6)
     
     xx, yy, oo = doOneSim(try_rw, try_CPR, try_D)
     
     #print(f'rw:{try_rw:.1f} D:{try_D:.1f} CPR:{try_CPR:.1f}   x,y,o {xx:.1f} {yy:.1f}    {oo:.1f} \n')
     
-    dx = abs(xx - 95.35)  
-    dy = abs(yy + 260.25)
-    do = 0#abs(oo - 279.2)*7
+    dx = abs(xx + 100)  
+    dy = abs(yy + 153)
+    if oo > 180:
+      do = 0#abs(oo - 360)
+    else:
+      do = 0#abs(oo - 0)
     if (dx+dy+do < best_diff) or best_first:
       best_diff = dx+dy+do
       best_rw = try_rw
