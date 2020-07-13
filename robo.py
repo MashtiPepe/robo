@@ -787,7 +787,7 @@ def doSimulation():
   
   #open the pickled file  
   try:
-    with open('sim_data.txt', 'rb') as fp:
+    with open('sim_data.bin', 'rb') as fp:
       sim_data = pickle.load(fp)
   except:
       print('simulation data not found')
@@ -1012,8 +1012,15 @@ def btnClearClick():
   
 def btnSaveDataClick():
   try:
-    with open('sim_data.txt', 'wb') as fp:
+    with open('sim_data.bin', 'wb') as fp:
       pickle.dump(sim_data, fp)
+    
+    with open('sim_data.txt', 'w') as text_file:
+      i = 0
+      while i < len(sim_data):
+        print(f'{sim_data[i]}, {sim_data[i+1]}', file=text_file)
+        i += 2
+  
   except:
     print('error saving data ')
   
