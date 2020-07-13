@@ -92,9 +92,9 @@ C_Mode = cModeStraight
 # r (travel distance mm) = (PLeft + PRight) / 2   * (2 pi rw) / CPR
 # theta (orientation range 0 to 2 pi) = (PRight - PRight) / (D / 2)
 #
-rw = 35.066
+rw = 36
 CPR = 508.8
-D = 221.502   #230   #217 inside dim, 231 center dim, 247 outside dim
+D = 227.4   #230   #217 inside dim, 231 center dim, 247 outside dim
 R = D/2
 pi_rw = math.pi * rw
 pi_rw_div_CPR = pi_rw / CPR
