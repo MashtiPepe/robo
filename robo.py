@@ -138,7 +138,7 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   #double_angle = r_travel - l_travel
   
   if l_travel * r_travel >= 0:   #traveling straight spin around entire diameter
-    robo_theta = (r_travel - l_travel) / counts_180 * math.pi
+    robo_theta = 30 * (r_travel - l_travel) / counts_180 * math.pi
   else:
     if True:
       robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
@@ -153,10 +153,10 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   #print (l_travel, r_travel, robo_theta)
   
   
-  while robo_theta > two_pi:
-    robo_theta -= two_pi
-  while robo_theta < 0:
-    robo_theta += two_pi
+  #while robo_theta > two_pi:
+  #  robo_theta -= two_pi
+  #while robo_theta < 0:
+  #  robo_theta += two_pi
   
   #print(PRight - PLeft)  
   robo_orientation += robo_theta  
@@ -801,10 +801,10 @@ def doSimulation():
   best_y = 0
   best_o = 0
   
-  trials = 50000
+  trials = 50
   while (trials > 0):
-    try_rw = random.uniform(35, 36)
-    try_D = 4 * try_rw * random.uniform(790, 805) / CPR  #random.uniform(215,250)
+    try_rw = 35.5  #random.uniform(35, 36)
+    try_D = 227  #4 * try_rw * random.uniform(790, 805) / CPR  #random.uniform(215,250)
     try_CPR = 508.8 #random.uniform(500, 517.6)
     
     xx, yy, oo = doOneSim(try_rw, try_CPR, try_D)
