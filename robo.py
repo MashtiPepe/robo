@@ -138,7 +138,7 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   #double_angle = r_travel - l_travel
   
   if l_travel * r_travel >= 0:   #traveling straight spin around entire diameter
-    robo_theta = 30 * (r_travel - l_travel) / counts_180 * math.pi
+    robo_theta = (r_travel - l_travel) / counts_180 * math.pi
   else:
     if True:
       robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
