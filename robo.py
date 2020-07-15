@@ -115,7 +115,10 @@ counts_limit = world_size * 10 * CPR_div_2_pi_rw
 def polar_r(PLeft, PRight):
   # (PLeft + PRight) / 2 * (2 * pi * rw) / CPR
   # (PLeft + PRight) * pi * rw / CPR
-  return (PLeft + PRight) * pi_rw_div_CPR
+  if abs(PLeft) < abs(PRight):
+    return PLeft * 2 * pi_rw_div_CPR
+  else:
+    return PRight * 2 * pi_rw_div_CPR
   
 #range is 0 to 2pi
 #orientation in radians
@@ -663,7 +666,7 @@ def error_function(PLeft, PRight):
     
 def robo_pwm(R, L):
   R = round(R)
-  L = round(L)
+  L = 0 #round(L)
   #print(f'pwm {R} {L} {PLeft} {PRight} {error_function(PLeft, PRight)} theta: {radians_to_deg(robo_orientation):.1f}')
   robo_send([146] + robo_num(R) + robo_num(L))
 
