@@ -662,7 +662,7 @@ def error_function(PLeft, PRight):
     
 def robo_pwm(R, L):
   R = round(R)
-  L = 0 #round(L)
+  L = round(L)
   #print(f'pwm {R} {L} {PLeft} {PRight} {error_function(PLeft, PRight)} theta: {radians_to_deg(robo_orientation):.1f}')
   robo_send([146] + robo_num(R) + robo_num(L))
 
