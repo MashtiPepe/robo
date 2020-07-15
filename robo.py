@@ -203,8 +203,8 @@ def robo_calc_pos(PLeft, PRight):
   r_travel = PRight - last_PRight
   l_travel = PLeft - last_PLeft
   
-  robo_vector_xy[0] += (r_travel + l_travel)/2 * two_pi_rw_div_CPR * math.cos(robo_orientation))
-  robo_vector_xy[1] += (r_travel + l_travel)/2 * two_pi_rw_div_CPR * math.sin(robo_orientation))
+  robo_vector_xy[0] += (r_travel + l_travel)/2 * two_pi_rw_div_CPR * math.cos(robo_orientation)
+  robo_vector_xy[1] += (r_travel + l_travel)/2 * two_pi_rw_div_CPR * math.sin(robo_orientation)
   
   #print(rho, phi, PLeft, PRight, last_PLeft, last_PRight)
   
