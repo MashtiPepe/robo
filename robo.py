@@ -92,12 +92,12 @@ C_Mode = cModeStraight
 # r (travel distance mm) = (PLeft + PRight) / 2   * (2 pi rw) / CPR
 # theta (orientation range 0 to 2 pi) = (PRight - PRight) / (D / 2)
 #
-rw = 36
+rw = 35.5
 CPR = 508.8
-D = 227.4   #230   #217 inside dim, 231 center dim, 247 outside dim
+D = 230   #217 inside dim, 231 center dim, 247 outside dim
 R = D/2
 pi_rw = math.pi * rw
-pi_rw_div_CPR = pi_rw / CPR
+two_pi_rw_div_CPR = 2 * pi_rw / CPR
 CPR_div_2_pi_rw = CPR / 2 / pi_rw
 two_pi = math.pi * 2
 radian_in_pos = two_pi / 100
@@ -116,9 +116,9 @@ def polar_r(PLeft, PRight):
   # (PLeft + PRight) / 2 * (2 * pi * rw) / CPR
   # (PLeft + PRight) * pi * rw / CPR
   if abs(PLeft) < abs(PRight):
-    return PLeft * 2 * pi_rw_div_CPR
+    return PLeft * two_pi_rw_div_CPR
   else:
-    return PRight * 2 * pi_rw_div_CPR
+    return PRight * two_pi_rw_div_CPR
   
 #range is 0 to 2pi
 #orientation in radians
@@ -140,17 +140,7 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   #how far did one go more than the other?
   #double_angle = r_travel - l_travel
   
-  if l_travel * r_travel >= 0:   #traveling straight spin around entire diameter
-    robo_theta = (r_travel - l_travel) / counts_180 * math.pi
-  else:
-    if True:
-      robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
-    else:
-      robo_theta = (r_travel + l_travel) / counts_180 * math.pi  #traveling straight
-      if abs(r_travel) > abs(l_travel):
-        robo_theta += -l_travel / counts_180 * math.pi      #in effect 2 x PRight spinning
-      else:
-        robo_theta += r_travel / counts_180 * math.pi      #in effect 2 x PRight spinning
+  robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
     
     
   #print (l_travel, r_travel, robo_theta)
@@ -210,14 +200,20 @@ def robo_calc_pos(PLeft, PRight):
   rho = polar_r((PLeft - last_PLeft), (PRight - last_PRight))
   polar_theta(PLeft, PRight, last_PLeft, last_PRight)  #calculate new instant angle for next calcs
   
+  r_travel = PRight - last_PRight
+  l_travel = PLeft - last_PLeft
+  
+  robo_vector_xy[0] += (r_travel + l_travel)/2 * two_pi_rw_div_CPR * math.cos(robo_orientation))
+  robo_vector_xy[1] += (r_travel + l_travel)/2 * two_pi_rw_div_CPR * math.sin(robo_orientation))
+  
   #print(rho, phi, PLeft, PRight, last_PLeft, last_PRight)
   
-  (x, y) = polar_to_xy((rho, phi))   #use the old robo_theta for the calcs.
+  #(x, y) = polar_to_xy((rho, phi))   #use the old robo_theta for the calcs.
   
   #print(rho, phi, x, y, robo_vector_xy[0], robo_vector_xy[1])
   
   #add in cartesian
-  robo_vector_xy = robo_add_tuple(robo_vector_xy, (x, y))
+  #robo_vector_xy = robo_add_tuple(robo_vector_xy, (x, y))
   
   #print('vec', robo_vector_xy)
   
@@ -761,7 +757,7 @@ def check_stuck():
   return res
   
 def doOneSim(this_rw, this_CPR, this_D):
-  global rw, CPR, D, counts_180, pi_rw_div_CPR
+  global rw, CPR, D, counts_180, two_pi_rw_div_CPR
   
   init_vars()
   
@@ -771,7 +767,7 @@ def doOneSim(this_rw, this_CPR, this_D):
   
   R = D / 2    
   counts_180 = R * CPR / 2 / rw
-  pi_rw_div_CPR = math.pi * rw / CPR
+  two_pi_rw_div_CPR = 2 * math.pi * rw / CPR
   #print(counts_180, pi_rw_div_CPR)
   
   i = 0
@@ -786,7 +782,6 @@ def doOneSim(this_rw, this_CPR, this_D):
 
 def doSimulation():
   global sim_data
-  global rw, CPR, D, counts_180, pi_rw_div_CPR
   
   #open the pickled file  
   try:
