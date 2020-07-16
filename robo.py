@@ -92,15 +92,17 @@ C_Mode = cModeStraight
 # r (travel distance mm) = (PLeft + PRight) / 2   * (2 pi rw) / CPR
 # theta (orientation range 0 to 2 pi) = (PRight - PRight) / (D / 2)
 #
-rw = 35.5
+rw = 36.2
 CPR = 508.8
-D = 230   #217 inside dim, 231 center dim, 247 outside dim
+D = 231   #217 inside dim, 231 center dim, 247 outside dim
 R = D/2
 pi_rw = math.pi * rw
 two_pi_rw_div_CPR = 2 * pi_rw / CPR
 CPR_div_2_pi_rw = CPR / 2 / pi_rw
 two_pi = math.pi * 2
 radian_in_pos = two_pi / 100
+k_mean = 1e-10
+k_scale = 0.22
 
 radian_to_degrees = 180 / math.pi
 
@@ -141,6 +143,13 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   #double_angle = r_travel - l_travel
   
   robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
+  
+  if (r_travel * l_travel) > 0:
+    drift = (r_travel + l_travel) * np.random.normal(loc=k_mean, scale=k_scale, size=(1))[0] / 10000
+    if r_travel < 0:       #traveling backward
+      robo_theta -= abs(drift)
+    else:
+      robo_theta += abs(drift)
     
     
   #print (l_travel, r_travel, robo_theta)
@@ -801,8 +810,8 @@ def doSimulation():
   
   trials = 50
   while (trials > 0):
-    try_rw = 35.5  #random.uniform(35, 36)
-    try_D = 227  #4 * try_rw * random.uniform(790, 805) / CPR  #random.uniform(215,250)
+    try_rw = 36.2  #random.uniform(35, 36)
+    try_D = 231  #4 * try_rw * random.uniform(790, 805) / CPR  #random.uniform(215,250)
     try_CPR = 508.8 #random.uniform(500, 517.6)
     
     xx, yy, oo = doOneSim(try_rw, try_CPR, try_D)
