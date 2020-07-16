@@ -192,12 +192,12 @@ def robo_calc_pos(PLeft, PRight):
   
   #print('Calc Pos', PLeft, PRight)
   
-  phi = robo_orientation
+  #phi = robo_orientation
   
   #update the new position in xy and polar coordinates
   #based on encoder feedback
   #movement since last time
-  rho = polar_r((PLeft - last_PLeft), (PRight - last_PRight))
+  #rho = polar_r((PLeft - last_PLeft), (PRight - last_PRight))
   polar_theta(PLeft, PRight, last_PLeft, last_PRight)  #calculate new instant angle for next calcs
   
   r_travel = PRight - last_PRight

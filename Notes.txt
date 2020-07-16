@@ -46,3 +46,5 @@ orientation of the robot.
 - Place the robot on the floor and 
   click the "explore" button.
   The robot will explore a radius of 2.5 meters 
+  
+- sudo usermod -a -G dialout nano (to not have to use sudo python3 robo.py)
