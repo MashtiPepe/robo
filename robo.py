@@ -94,7 +94,7 @@ C_Mode = cModeStraight
 #
 rw = 36.2
 CPR = 508.8
-D = 233   #217 inside dim, 231 center dim, 247 outside dim
+D = 232   #217 inside dim, 231 center dim, 247 outside dim
 R = D/2
 pi_rw = math.pi * rw
 two_pi_rw_div_CPR = 2 * pi_rw / CPR
@@ -145,7 +145,7 @@ def polar_theta(PLeft, PRight, last_PLeft, last_PRight):
   robo_theta = (r_travel - l_travel) / 2 / counts_180 * math.pi
   
   if (r_travel * l_travel) > 0:
-    drift = (r_travel + l_travel) * np.random.normal(loc=k_mean, scale=k_scale, size=(1))[0] / 19
+    drift = (r_travel + l_travel) * np.random.normal(loc=k_mean, scale=k_scale, size=(1))[0] / 18
     robo_theta += drift
     
     
