@@ -916,9 +916,9 @@ def draw_robo():
   size = 40
   for i in range(6):
     if bumper[i] > 50:
-      bumper_arc[i] = _canvas_map.create_arc(map_x-size, map_y-size, map_x+size, map_y+size, start=deg-30+(i*10), extent=12, outline="red", style=tkinter.ARC, width=2)
+      bumper_arc[5-i] = _canvas_map.create_arc(map_x-size, map_y-size, map_x+size, map_y+size, start=deg-30+(i*10), extent=12, outline="red", style=tkinter.ARC, width=2)
     else:
-      bumper_arc[i] = _canvas_map.create_arc(map_x-size, map_y-size, map_x+size, map_y+size, start=deg-30+(i*10), extent=12, outline="black", style=tkinter.ARC, width=2)
+      bumper_arc[5-i] = _canvas_map.create_arc(map_x-size, map_y-size, map_x+size, map_y+size, start=deg-30+(i*10), extent=12, outline="black", style=tkinter.ARC, width=2)
       
 def update_info():
   global update_info_time
@@ -953,8 +953,8 @@ def btnGoClick():
   
   R_L_Offset = PRight - PLeft - error_function(PLeft, PRight)
   C_Mode = cModeStraight
-  R_Target += (CPR * 10)
-  L_Target += (CPR * 10)
+  R_Target += (CPR * 1)
+  L_Target += (CPR * 1)
   
   pwm_R = pwm_initial
   pwm_L = pwm_initial
