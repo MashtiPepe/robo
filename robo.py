@@ -916,7 +916,7 @@ def draw_robo():
   size = 40
   for i in range(6):
     if bumper[i] > 50:
-      bumper_arc[i] = _canvas_map.create_arc(map_x-size, map_y-size, map_x+size, map_y+size, start=deg-30+((5-i)i*10), extent=12, outline="red", style=tkinter.ARC, width=2)
+      bumper_arc[i] = _canvas_map.create_arc(map_x-size, map_y-size, map_x+size, map_y+size, start=deg-30+((5-i)*10), extent=12, outline="red", style=tkinter.ARC, width=2)
     else:
       bumper_arc[i] = _canvas_map.create_arc(map_x-size, map_y-size, map_x+size, map_y+size, start=deg-30+((5-i)*10), extent=12, outline="black", style=tkinter.ARC, width=2)
       
