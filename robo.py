@@ -12,6 +12,11 @@ import numpy as np
 import pickle
 import random
 
+import sys
+sys.path.insert(0, "../myUtils")
+from _tcp import TCPClient
+
+
 rIdle             = 'idle'
 rClearFeedback    = 'clear feedback'
 rWaitCF           = 'wait clear feedback'
@@ -1027,6 +1032,25 @@ def btnSaveDataClick():
   
   except:
     print('error saving data ')
+
+def process_server(connection, data):
+  data = data.decode('iso-8859-1')
+  param_list = data.split(",")
+  response = ''
+  #print(param_list)
+  for param in param_list:
+    #print(param)
+    response += param + ',\0'
+      
+  #create a fixed length packet.  This will avoid the timeout
+  #on the client side.  Say 40 chars?
+  pad_len = 40 - len(response)
+  if pad_len > 0:
+    for i in range(pad_len):
+      response += '\0'
+  
+  connection.sendall(bytearray(response, 'iso-8859-1'))
+
   
 
 #main routine
@@ -1036,6 +1060,8 @@ def btnSaveDataClick():
 if ser_port:
   thread_run = True
   
+  server = TCPServer('127.0.0.1', 1029, process_server) 
+          
   t_rx = threading.Thread(name='rx_thread', target=robo_read, args=[])
   t_rx.setDaemon(True)
   t_rx.start()
