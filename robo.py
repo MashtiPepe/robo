@@ -14,7 +14,7 @@ import random
 
 import sys
 sys.path.insert(0, "../myUtils")
-from _tcp import TCPClient
+from _tcp import TCPServer
 
 
 rIdle             = 'idle'
