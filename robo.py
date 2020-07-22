@@ -68,8 +68,7 @@ pwm_R = 0
 pwm_L = 0
 pwm_norm = 70
 pwm_max = 150
-pwm_accel = 0.25
-pwm_initial = 60
+pwm_bias = 0
 pwm_last_correction = 0
 pwm_correction_time = 0
 
@@ -522,82 +521,30 @@ def act_on_data(data):
     robo_state = rWaitCF
          
   if robo_state == rCloseLoop:
-    if abs(PRight - R_Target) < 5:
+    if abs(PRight - R_Target) < 100:
       #print('out of close loop')
       robo_pwm(0, 0)
       #robo_drive(0, 0)
       robo_state = rIdle
-    else:
-      if abs(PRight - R_Target) < 400:
-        pwm_norm = 28
-      else:
-        pwm_norm = pwm_max * 0.6
-        
-      #if C_Mode == cModeBack:
-      #  pwm_norm *= -1.3
+      pwm_last_correction = 0
+    else:       
       
       if time.time() > pwm_correction_time:  
+
         pwm_correction_time = time.time() + 0.1
         
-        pwm_accel_L = False
-        if C_Mode in {cModeStraight}:
-          if pwm_R < pwm_norm:
-            pwm_R += pwm_accel
-            pwm_accel_L = True
-          elif pwm_R > pwm_norm:
-            pwm_R -= pwm_accel
-            pwm_accel_L = True
-        
-          if pwm_accel_L:
-            if pwm_L < pwm_norm:
-              pwm_L += pwm_accel
-            elif pwm_L > pwm_norm:
-              pwm_L -= pwm_accel
-        
-        elif C_Mode in {cModeBack}:
-          if pwm_R < -pwm_norm:
-            pwm_R += pwm_accel
-            pwm_accel_L = True
-          elif pwm_R > -pwm_norm:
-            pwm_R -= pwm_accel
-            pwm_accel_L = True
-          
-          if pwm_accel_L:
-            if pwm_L < -pwm_norm:
-              pwm_L += pwm_accel
-            elif pwm_L > -pwm_norm:
-              pwm_L -= pwm_accel
-        else:
-          if pwm_R < pwm_norm:
-            pwm_R += pwm_accel
-            pwm_accel_L = True
-          elif pwm_R > pwm_norm:
-            pwm_R -= pwm_accel
-            pwm_accel_L = True
-        
-          if pwm_accel_L:
-            if pwm_L < -pwm_norm:
-              pwm_L += pwm_accel
-            elif pwm_L > -pwm_norm:
-              pwm_L -= pwm_accel
-
         error = error_function(PLeft, PRight)  
-        correction = (error * 0.8) 
+        correction = (error * 0.5) 
         
-        #if pwm_accel_L:        
-        #  print(f'{pwm_R:.1f}, {pwm_L:.1f}, {PRight}, {PLeft}, {PRight-PLeft}')
+        #print(f'{pwm_R:.1f}, {pwm_L:.1f}, {PRight}, {PLeft}, {PRight-PLeft}')
           
         if C_Mode in {cModeStraight, cModeBack}:
           pwm_L = pwm_L + correction - pwm_last_correction
         else:
           pwm_L = pwm_L + correction - pwm_last_correction
           
-        pwm_last_correction = correction * 0.92
+        pwm_last_correction = correction * 0.95
         
-        #if error > 0 and pwm_L < 20 and pwm_L > 0:
-        #  pwm_L = 20
-        #elif error < 0 and pwm_L > -20 and pwm_L < 0:
-        #  pwm_L = -20
           
         if pwm_L < -pwm_max:
           pwm_L = -pwm_max
@@ -606,7 +553,7 @@ def act_on_data(data):
           
         #print(f'{pwm_R:.0f} {pwm_L:.0f} {radians_to_deg(robo_orientation):.2f} {PRight} {PLeft} {PRight-PLeft}')
       
-        robo_pwm(pwm_R, pwm_L)
+        robo_pwm(pwm_R, pwm_L + pwm_bias)
 
       
     
@@ -958,11 +905,11 @@ def btnGoClick():
   
   R_L_Offset = PRight - PLeft - error_function(PLeft, PRight)
   C_Mode = cModeStraight
-  R_Target += (CPR * 1)
-  L_Target += (CPR * 1)
+  R_Target += (CPR * 2)
+  L_Target += (CPR * 2)
   
-  pwm_R = pwm_initial
-  pwm_L = pwm_initial
+  pwm_R = pwm_norm
+  pwm_L = pwm_norm
   pwm_last_correction = 0
   reset_check_stuck()
   robo_state = rCloseLoop
@@ -976,8 +923,8 @@ def btnSpinClick():
   R_Target += counts_180  #815
   L_Target -= counts_180  #815
   
-  pwm_R = pwm_initial
-  pwm_L = -pwm_initial
+  pwm_R = pwm_norm
+  pwm_L = -pwm_norm
   pwm_last_correction = 0
   reset_check_stuck()
   robo_state = rCloseLoop
@@ -991,8 +938,8 @@ def btnBackClick():
   R_Target = PRight - (CPR * 1)
   L_Target = PLeft - (CPR * 1)
   
-  pwm_R = -pwm_initial
-  pwm_L = -pwm_initial
+  pwm_R = -pwm_norm
+  pwm_L = -pwm_norm
   pwm_last_correction = 0
   reset_check_stuck()
   robo_state = rCloseLoop
@@ -1006,8 +953,8 @@ def btnExploreClick():
   R_Target += counts_limit
   L_Target += counts_limit
   
-  pwm_R = pwm_initial
-  pwm_L = pwm_initial
+  pwm_R = pwm_norm
+  pwm_L = pwm_norm
   pwm_last_correction = 0
   reset_check_stuck()
   robo_state = rCloseLoop
