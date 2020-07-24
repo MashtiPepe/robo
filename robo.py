@@ -282,7 +282,7 @@ def robo_safety():
   
   #check the bumper light strength
   for i in range(6):
-    if bumper[i] > 50:
+    if bumper[i] > 80:
       robo_draw_info = 2
       robo_draw_color = 'red'
       if len(explore_actions) == 0 and robo_explore:
@@ -981,6 +981,9 @@ def btnSaveDataClick():
     print('error saving data ')
 
 def process_server(connection, data):
+  global explore_actions
+  global R_L_Offset
+
   data = data.decode('iso-8859-1')
   param_list = data.split(",")
   response = ''
@@ -988,6 +991,17 @@ def process_server(connection, data):
   for param in param_list:
     #print(param)
     response += param + ',\0'
+
+    if len(explore_actions) == 0 and robo_explore:
+        if param == 'back':
+            explore_actions += [cModeSpin, cModeDummy]
+            btnBackClick()
+        elif param == 'right':
+            R_L_Offset -= 50
+        elif param == 'left':
+            R_L_Offset += 50
+      
+
       
   #create a fixed length packet.  This will avoid the timeout
   #on the client side.  Say 40 chars?
