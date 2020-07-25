@@ -86,6 +86,7 @@ R_L_Offset = 0
 R_Target = 0
 L_Target = 0
 C_Mode = cModeStraight
+robo_straight_travel = 0
 
 #
 # robot wheel radius rw = 36 mm
@@ -199,6 +200,7 @@ def robo_add_tuple(t1, t2):
 def robo_calc_pos(PLeft, PRight):
   global robo_vector_xy, robo_vector_pol
   global last_PLeft, last_PRight
+  global robo_straight_travel
   
   #print('Calc Pos', PLeft, PRight)
   
@@ -212,11 +214,15 @@ def robo_calc_pos(PLeft, PRight):
   
   r_travel = PRight - last_PRight
   l_travel = PLeft - last_PLeft
+
+  this_travel = (r_travel + l_travel) / 2
   
-  robo_vector_xy[0] += (r_travel + l_travel)/2 * two_pi_rw_div_CPR * math.cos(robo_orientation)
-  robo_vector_xy[1] += (r_travel + l_travel)/2 * two_pi_rw_div_CPR * math.sin(robo_orientation)
+  robo_vector_xy[0] += this_travel * two_pi_rw_div_CPR * math.cos(robo_orientation)
+  robo_vector_xy[1] += this_travel * two_pi_rw_div_CPR * math.sin(robo_orientation)
   
   #print(rho, phi, PLeft, PRight, last_PLeft, last_PRight)
+
+  robo_straight_travel += this_travel
   
   #(x, y) = polar_to_xy((rho, phi))   #use the old robo_theta for the calcs.
   
@@ -279,15 +285,24 @@ def rdata_button_press(data):
 def robo_safety():
   global explore_actions, robo_draw_info, robo_draw_color
   global pwm_L, pwm_R
+  global R_L_Offset
   
   #check the bumper light strength
-  for i in range(6):
-    if bumper[i] > 80:
-      robo_draw_info = 2
-      robo_draw_color = 'red'
-      if len(explore_actions) == 0 and robo_explore:
-        explore_actions += [cModeSpin, cModeDummy]
-        btnBackClick()
+  if len(explore_actions) == 0 and robo_explore:
+    for i in range(6):
+      if bumper[i] > 80:
+        robo_draw_info = 2
+        robo_draw_color = 'red'
+        
+        if i in [0,1]:
+          R_L_Offset -= 4   # turn right
+
+        elif i in [4,5]:
+          R_L_Offset += 4   # turn left
+
+        else:
+          explore_actions += [cModeSpin, cModeDummy]
+          btnBackClick()
   
   #check the cliff light strength
   for i in range(4):
@@ -809,26 +824,27 @@ def draw_robo():
   global grid_world, explore_actions
   global robo_draw_color, robo_draw_info
   global old_pleft, old_pright
+  global robo_straight_travel
   
   map_x = (robo_vector_xy[0] // 10) + half_world
   map_y = (-robo_vector_xy[1] // 10) + half_world
   
   if robo_explore:
-    if map_x > world_size and len(explore_actions) == 0:
-      explore_actions += [cModeSpin, cModeDummy]
-      btnBackClick()
+    #if map_x > world_size and len(explore_actions) == 0:
+    #  explore_actions += [cModeSpin, cModeDummy]
+    #  btnBackClick()
 
-    if map_x < 0 and len(explore_actions) == 0:
-      explore_actions += [cModeSpin, cModeDummy]
-      btnBackClick()
+    #if map_x < 0 and len(explore_actions) == 0:
+    #  explore_actions += [cModeSpin, cModeDummy]
+    #  btnBackClick()
   
-    if map_y > world_size and len(explore_actions) == 0:
-      explore_actions += [cModeSpin, cModeDummy]
-      btnBackClick()
+    #if map_y > world_size and len(explore_actions) == 0:
+    #  explore_actions += [cModeSpin, cModeDummy]
+    #  btnBackClick()
 
-    if map_y < 0 and len(explore_actions) == 0:
-      explore_actions += [cModeSpin, cModeDummy]
-      btnBackClick()
+    #if map_y < 0 and len(explore_actions) == 0:
+    #  explore_actions += [cModeSpin, cModeDummy]
+    #  btnBackClick()
       
     if len(explore_actions) > 0:
       if robo_state == rIdle:
@@ -840,6 +856,7 @@ def draw_robo():
           btnSpinClick()
         elif explore_actions[0] == cModeDummy:
           explore_actions.pop(0)
+          robo_straight_travel = 0 
     elif robo_state == rIdle:
       btnExploreClick()
   
@@ -920,8 +937,8 @@ def btnSpinClick():
   
   R_L_Offset = PRight + PLeft + error_function(PLeft, PRight)
   C_Mode = cModeSpin
-  R_Target += counts_180  #815
-  L_Target -= counts_180  #815
+  R_Target += counts_180 * 0.95
+  L_Target -= counts_180 * 0.95 
   
   pwm_R = pwm_norm
   pwm_L = -pwm_norm
@@ -983,6 +1000,7 @@ def btnSaveDataClick():
 def process_server(connection, data):
   global explore_actions
   global R_L_Offset
+  global robo_straight_travel
 
   data = data.decode('iso-8859-1')
   param_list = data.split(",")
@@ -994,8 +1012,11 @@ def process_server(connection, data):
 
     if len(explore_actions) == 0 and robo_explore:
         if param == 'back':
+          if robo_straight_travel > CPR:
             explore_actions += [cModeSpin, cModeDummy]
             btnBackClick()
+          else:
+            print('back ignored', robo_straight_travel)
         elif param == 'right':
             R_L_Offset -= 50
         elif param == 'left':
