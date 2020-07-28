@@ -27,6 +27,7 @@ sim_data = np.zeros((0, 0), dtype=np.int)
 
 #world representation
 world_size = 500
+world_res  = 20    #world_res * world_size is diameter of travel in mm
 half_world = world_size // 2
 grid_world = np.zeros((world_size, world_size), dtype=np.uint8)
 robo_draw_info = 1
@@ -116,7 +117,7 @@ print('counts in 180 degrees: ', counts_180)
 
 #alignment_error = 0  #5.7397e-5   #radians per mm.
 
-counts_limit = world_size * 10 * CPR_div_2_pi_rw
+counts_limit = world_size * world_res * CPR_div_2_pi_rw
 
 # travel in mm
 def polar_r(PLeft, PRight):
@@ -269,6 +270,8 @@ def rdata_button_press(data):
   if data & 1 > 0:    #clean button
     if not robo_explore:
       btnExploreClick()
+    else:
+      btnStopClick()
   #elif data & 2 > 0:  #spot button
   #  key = 's'
   elif data & 4 > 0:  #dock button
@@ -704,10 +707,10 @@ def robo_process():
 def reset_check_stuck():
   global old_pleft, old_pright, check_stuck_time
   
-  check_stuck_time = time.time() + 1
+  check_stuck_time = time.time() + 2
   
-  old_pleft = PLeft + 1000
-  old_pright = PRight + 1000
+  old_pleft = PLeft
+  old_pright = PRight
 
 def check_stuck():
   global old_pleft, old_pright, check_stuck_time
@@ -725,7 +728,7 @@ def check_stuck():
         
     old_pleft = PLeft
     old_pright = PRight
-    check_stuck_time = time.time() + 1.3
+    check_stuck_time = time.time() + 2.3
 
   return res
   
@@ -826,8 +829,8 @@ def draw_robo():
   global old_pleft, old_pright
   global robo_straight_travel
   
-  map_x = (robo_vector_xy[0] // 10) + half_world
-  map_y = (-robo_vector_xy[1] // 10) + half_world
+  map_x = (robo_vector_xy[0] // world_res) + half_world
+  map_y = (-robo_vector_xy[1] // world_res) + half_world
   
   if robo_explore:
     #if map_x > world_size and len(explore_actions) == 0:
@@ -937,8 +940,9 @@ def btnSpinClick():
   
   R_L_Offset = PRight + PLeft + error_function(PLeft, PRight)
   C_Mode = cModeSpin
-  R_Target += counts_180 * 0.95
-  L_Target -= counts_180 * 0.95 
+  r = random.uniform(0.2, 0.8)
+  R_Target += counts_180 * r
+  L_Target -= counts_180 * r 
   
   pwm_R = pwm_norm
   pwm_L = -pwm_norm
